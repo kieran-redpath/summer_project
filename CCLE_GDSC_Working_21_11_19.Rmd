@@ -1,0 +1,299 @@
+---
+title: "CCLE_GDSC_Analysis_Working_21_11_19"
+author: "Kieran Redpath"
+date: "21 November 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Shortcuts
+Ctrl Shift M = %>% 
+Alt - = <-
+Ctrl Alt I = Insert new R chunk
+Ctrl Alt M = Git commit
+
+## What exactly are these files?
+DepMap-2018q3-celllines.csv: tells you more information about the cell lines
+CCLE_mutations.csv: information on what mutations are present in CCLE cell lines
+CCLE_RNAseq_genes_counts_20180929.gct: expression data for a bunch of genes in CCLE cell lines
+
+gdsc_codes_1.csv: tells you about drugs (GDSC ID, actual name, etc.)
+GDSC_AUC.csv: AUC data for GDSC cell lines, treated with a bunch of different drugs
+GDSC_IC50.csv: IC50 data for GDSC cell lines, treated with a bunch of different drugs
+
+# 18_11_19
+```{r Load Packages}
+setwd("~/Documents/R Data/summer_project")
+# Packages
+library(limma)
+library(edgeR)
+library(data.table)
+library(magrittr)
+library(ggplot2)
+library(CePa)
+library(dplyr)
+library(tidyverse)
+```
+
+```{r Data Setup}
+# Read Data
+depMapCCLEmut <- fread('CCLE_GDSC/Data/CCLE_mutations.csv', sep=',')
+dim(depMapCCLEmut)
+depMapCCLElines <- fread('CCLE_GDSC/Data/DepMap-2018q3-celllines.csv', sep=',')
+dim(depMapCCLElines)
+# Check format of cell line info:
+head(depMapCCLElines)
+# Get cell line barcodes:
+bc <- depMapCCLEmut$Tumor_Sample_Barcode
+head(bc)
+# Match barcodes to Broad IDs
+mt <- match(bc, depMapCCLElines$Broad_ID)
+sum(is.na(mt))
+# Cell lines that don't match to Broad IDs
+is.na(mt) %>%  which() %>% bc[.] %>% table()
+# Extract disease and gene info
+dis <- depMapCCLElines$`Primary Disease`[mt]
+gn <- depMapCCLEmut$Hugo_Symbol
+```
+
+
+
+```{r CDH1}
+# Number of CDH1 mutations
+sum(gn == "CDH1")
+# Lines with CDH1 mutations (ordered by mutation counts)
+which(gn == "CDH1") %>% dis[.] %>% table() %>% sort(., decreasing=TRUE) 
+# Ignore NSC Lung Cancer for now
+diseases = c("Colon Cancer", "Gastric Cancer", "Breast Cancer")
+kp <- bc[which(gn == "CDH1" & dis %in% diseases)]
+# Colon, breast and gastric cell lines with CDH1 mutations
+cdh1Lines <- depMapCCLElines %>% dplyr::filter(., Broad_ID %in% kp)
+cdh1Lines %>% 
+  dplyr::arrange(., `Primary Disease`) 
+col_order_cdh1 <- c("CCLE_Name","Broad_ID","Aliases","COSMIC_ID","Sanger ID","Primary Disease","Subtype Disease","Gender","Source")
+cdh1Lines <- cdh1Lines[, col_order_cdh1]
+```
+
+
+
+```{r Drug Data: Setup}
+# Load Data
+gdsc_auc <- read.csv('CCLE_GDSC/Data/GDSC_AUC.csv', sep=',')
+gdsc_ic50 <- read.csv('CCLE_GDSC/Data/GDSC_IC50.csv', sep=',')
+dim(gdsc_auc)
+dim(gdsc_ic50)
+gdsc_auc[1:5,1:5]
+gdsc_ic50[1:5,1:5]
+```
+
+
+
+```{r Drug Data: Dasatinib}
+# GDSC drug codes
+drugCodes <- read.csv('CCLE_GDSC/Data/gdsc_codes_1.csv', sep= ',')
+head(drugCodes)
+# Find Dasatinib (drug_id is "51")
+drugCodes %>% dplyr::filter(., drug_name == "Dasatinib")
+# Extract Dasatinib data
+dasatinib_ic50 <- gdsc_ic50 %>% dplyr::filter(., X=="GDSC:51")
+dasatinib_auc <- gdsc_auc %>% dplyr::filter(., X=="GDSC:51")
+# Count non-NA values
+sum(!is.na(dasatinib_ic50))
+sum(!is.na(dasatinib_auc))
+# GDSC cell lines with Dasatinib AUC data
+names(dasatinib_auc)[!is.na(dasatinib_auc)][-1]
+head(dasatinib_ic50)[,1:5]
+head(dasatinib_auc)[,1:5]
+# Replace names with CCLE names
+ic50_names <- match(names(dasatinib_ic50), 
+                  gsub("-",".",depMapCCLElines$Broad_ID, fixed=TRUE))
+names(dasatinib_ic50) <- depMapCCLElines$CCLE_Name[ic50_names]
+head(dasatinib_ic50)[,1:5]
+
+auc_names <- match(names(dasatinib_auc), 
+                  gsub("-",".",depMapCCLElines$Broad_ID, fixed=TRUE))
+names(dasatinib_auc) <- depMapCCLElines$CCLE_Name[auc_names]
+head(dasatinib_auc)[,1:5]
+```
+
+
+
+```{r CCLE Expression Data Setup/Test}
+# Load data, convert to table
+ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
+dim(ccleExpData)
+# Data are read counts and ensembl gene IDs
+ccleExpData[1:5,1:5]
+# Log the data (add 0.5 to avoid log(0))
+logExpDat <- log(ccleExpData + 0.5)
+# Density plots to assess consistency-> data are consistent with one another -> will normalise this next
+plot(density(logExpDat[,1]))
+for(i in 2:ncol(logExpDat)) lines(density(logExpDat[,i]))
+```
+
+
+
+```{r CCLE Expression Data Normalised/Unfiltered}
+# Normalise via limma::voom (see page 70 of Limma usersguide)
+# Note - I'm not filtering the genes
+dge <- DGEList(counts=ccleExpData)
+dge <- calcNormFactors(dge)
+
+v <- voom(dge, plot=TRUE)
+
+# Extract the normalised expression data
+# Note that the voom procedure produces logged data
+expDat <- v$E
+
+# Plot the post-normalised data -> the important part
+# Note there is now less variation in the "bump" above 5 - instead the 
+# variation has been "moved" to the very low abundance genes (below -5).
+plot(density(expDat[,1]))
+for(i in 2:ncol(expDat)) lines(density(expDat[,i]))
+
+expDat[1:5,1:5]
+```
+
+
+
+## Now you can start having a play with the expression data in combination with the Dasatinib AUC and IC50 information. Can also add in CDH1 mutation data as needed.
+
+# 19_11_19
+```{r Extract Tissue Info for IC50, AUC, and expDat}}
+#Create a vector containing the shared sample names (the intersect of identical data)
+commonSamples <- intersect(names(dasatinib_ic50),colnames(expDat))
+head(commonSamples)
+
+# Figure out which IC50 observations are within commonSamples (match)
+ic50_match <- match(commonSamples, names(dasatinib_ic50))
+# Interpret this (e.g. the 18th entry in dasatinib_ic50 matches the first entry in commonSamples)
+head(ic50_match)
+# Figure out which expDat observations are within commonSamples (match)
+expDat_match <- match(commonSamples, colnames(expDat))
+head(expDat_match)
+
+# Create a new IC50 variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
+dasatinib_ic50_sort <- dasatinib_ic50[na.omit(ic50_match)]
+# Create a new expDat variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
+expDat_sort <- expDat[ , na.omit(expDat_match)]
+
+# strsplit takes each "names" data, splitting it at each "_", creating a list.
+# lapply takes each list entry from this, dropping the first value (in this case, cell-line), then pastes the rest back together with "_".
+# unlist converts the data from a list back to a vector.
+# Define "tissue_sort"
+tissue_sort <- strsplit(names(dasatinib_ic50_sort), "_") %>% 
+  lapply(., function(x) paste0(x[-1], collapse='_')) %>%  
+  unlist()
+# Check numbers for each tissue type
+table(tissue_sort)
+
+# Create a vector containing the shared sample names (the intersect of identical data)
+commonSamples <- intersect(names(dasatinib_auc),colnames(expDat))
+head(commonSamples)
+# Figure out which IC50 observations are within commonSamples (match)
+auc_match <- match(commonSamples, names(dasatinib_auc))
+# Interpret this 
+head(auc_match)
+# Figure out which expDat observations are within commonSamples (match)
+expDat_auc_match <- match(commonSamples, colnames(expDat))
+head(expDat_match)
+# Create a new auc variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
+dasatinib_auc_sort <- dasatinib_auc[na.omit(auc_match)]
+# Create a new expDat variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
+expDat_auc_sort <- expDat[ , na.omit(expDat_auc_match)]
+
+# Note that the order is now the same
+expDat_auc_sort[1:5,1:5]
+dasatinib_auc_sort[1:5]
+dasatinib_ic50_sort[1:5]
+```
+
+
+
+# 20_11_19
+
+## CCLE_dasat_BCCCGC is *all* BC, CC, and GC lines with GDSC data
+```{r Find Information on Dasatinib Treatment for CDH1 Mutant Breast, Colon and Gastric Cancer Lines}
+# Create the filtered file, removing cell line info. Leaves you with IC50 for BC, CC, GC
+tissue_sort_BCCCGC <- strsplit(names(dasatinib_ic50_sort), "_") %>% 
+  lapply(., function(x) paste0(x[-1], collapse='_')) %>%  
+  unlist()
+dasat_ic50_BCCCGC <- dasatinib_ic50_sort[tissue_sort == "STOMACH" | tissue_sort == "BREAST" | tissue_sort == "LARGE_INTESTINE"]
+# Create the filtered file, removing cell line info. Leaves you with AUC for BC, CC, GC
+tissue_sort_BCCCGC2 <- strsplit(names(dasatinib_auc_sort), "_") %>% 
+  lapply(., function(x) paste0(x[-1], collapse='_')) %>%  
+  unlist()
+dasat_auc_BCCCGC <- dasatinib_auc_sort[tissue_sort_BCCCGC2 == "STOMACH" | tissue_sort_BCCCGC2 == "BREAST" | tissue_sort_BCCCGC2 == "LARGE_INTESTINE"]
+# Combine these two files
+dasat_data_BCCCGC <- rbind(dasat_auc_BCCCGC, dasat_ic50_BCCCGC)
+rownames(dasat_data_BCCCGC) <- c("AUC","IC50")
+dasat_data_BCCCGC <- t(dasat_data_BCCCGC)
+
+# Create a file with cell line info to combine with "dasat_data_BCCCGC"
+CCLElinesBCCCGC <- depMapCCLElines %>%
+  filter(`Primary Disease`=="Gastric Cancer"|`Primary Disease`=="Breast Cancer" |`Primary Disease`=="Colon Cancer")
+# Rename CCLElinesBCCCGC rows
+l <- as.list(CCLElinesBCCCGC$CCLE_Name)
+rownames(CCLElinesBCCCGC) <- l
+CCLElinesBCCCGC <- select (CCLElinesBCCCGC, -c(CCLE_Name))
+
+#Combine dasatinib data and CCLElinesBCCCGC
+CCLE_dasat_BCCCGC <- merge(CCLElinesBCCCGC,dasat_data_BCCCGC,by=0, all=T)
+names(CCLE_dasat_BCCCGC)[names(CCLE_dasat_BCCCGC) == 'Row.names'] <- 'CCLE_Name'
+View(CCLE_dasat_BCCCGC)
+```
+
+
+
+# 21_11_19
+
+## Create a file with CDH1 non-mutants
+```{r CDH1 Non-mutants}
+# Number of lines without CDH1 mutations
+sum(gn != "CDH1")
+# Lines without CDH1 mutations (ordered by mutation counts)
+which(gn != "CDH1") %>% dis[.] %>% table() %>% sort(., descending = TRUE)
+# Ignore NSC Lung Cancer for now
+diseases = c("Colon Cancer", "Gastric Cancer", "Breast Cancer")
+kk <- bc[which(gn != "CDH1" & dis %in% diseases)]
+# Colon, breast and gastric cell lines without CDH1 mutations
+Noncdh1Lines <- depMapCCLElines %>% dplyr::filter(., Broad_ID %in% kk)
+Noncdh1Lines %>% 
+  dplyr::arrange(., `Primary Disease`)
+col_order_Noncdh1 <- c("CCLE_Name","Broad_ID","Aliases","COSMIC_ID","Sanger ID","Primary Disease","Subtype Disease","Gender","Source")
+Noncdh1Lines <- Noncdh1Lines[, col_order_Noncdh1]
+
+# Open the new data
+View(Noncdh1Lines)
+View(cdh1Lines)
+
+# Remove the overlap between cdh1Lines and Noncdh1Lines from Noncdh1Lines- But how?
+Error <- intersect(Noncdh1Lines$CCLE_Name,cdh1Lines$CCLE_Name)
+Error <- as.list(Error)
+
+#This might be almost right? It at least actually did something
+Noncdh1Lines2 <- select(filter(Noncdh1Lines, CCLE_Name != "Error"))
+
+# The List that makes up "Error": 
+
+# c("2313287_STOMACH", "AGS_STOMACH","BT20_BREAST", "CAL148_BREAST", "CAMA1_BREAST", "CW2_LARGE_INTESTINE", "EVSAT_BREAST", "GCIY_STOMACH", "GP2D_LARGE_INTESTINE", "GP5D_LARGE_INTESTINE", "HCC2998_LARGE_INTESTINE", "HCT116_LARGE_INTESTINE", "HDQP1_BREAST", "HT115_LARGE_INTESTINE", "IM95_STOMACH", "KATOIII_STOMACH", "KE39_STOMACH", "MDAMB453_BREAST", "MKN45_STOMACH", "NCCSTCK140_STOMACH", "NUGC4_STOMACH", "OCUM1_STOMACH", "RERFGC1B_STOMACH", "SNU1040_LARGE_INTESTINE","SNU407_LARGE_INTESTINE", "SNU5_STOMACH", "SNU61_LARGE_INTESTINE", "SNUC2A_LARGE_INTESTINE", "UACC812_BREAST", "UACC893_BREAST", "ZR7530_BREAST")
+
+# CCLE_Name != "2313287_STOMACH" | CCLE_Name != "AGS_STOMACH" | CCLE_Name != "BT20_BREAST" | CCLE_Name != "CAL148_BREAST" | CCLE_Name != "CAMA1_BREAST" | CCLE_Name != "CW2_LARGE_INTESTINE" | CCLE_Name != "EVSAT_BREAST" | CCLE_Name != "GCIY_STOMACH" | CCLE_Name != "GP2D_LARGE_INTESTINE" | CCLE_Name != "GP5D_LARGE_INTESTINE" | CCLE_Name != "HCC2998_LARGE_INTESTINE" | CCLE_Name != "HCT116_LARGE_INTESTINE" | CCLE_Name != "HDQP1_BREAST" | CCLE_Name != "HT115_LARGE_INTESTINE" | CCLE_Name != "IM95_STOMACH" | CCLE_Name != "KATOIII_STOMACH" | CCLE_Name != "KE39_STOMACH" | CCLE_Name != "MDAMB453_BREAST" | CCLE_Name != "MKN45_STOMACH" | CCLE_Name != "NCCSTCK140_STOMACH" | CCLE_Name != "NUGC4_STOMACH" | CCLE_Name != "OCUM1_STOMACH" | CCLE_Name != "RERFGC1B_STOMACH" | CCLE_Name != "SNU1040_LARGE_INTESTINE" | CCLE_Name != "SNU407_LARGE_INTESTINE" | CCLE_Name != "SNU5_STOMACH" | CCLE_Name != "SNU61_LARGE_INTESTINE" | CCLE_Name != "SNUC2A_LARGE_INTESTINE" | CCLE_Name != "UACC812_BREAST" | CCLE_Name != "UACC893_BREAST" | CCLE_Name != "ZR7530_BREAST"
+```
+
+
+
+# 25_11_19
+
+## Use cdh1Lines, Noncdh1Lines, and CCLE_dasat_BCCCGC to find expression data for mutants vs non-mutants
+```{r Expression Data for Mutants vs Non-mutants}
+
+```
+
+
+
