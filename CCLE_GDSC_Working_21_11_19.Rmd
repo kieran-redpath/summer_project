@@ -3,7 +3,7 @@ title: "CCLE_GDSC_Analysis_Working_21_11_19"
 author: "Kieran Redpath"
 date: "21 November 2019"
 output:
-  html_document: default
+  github_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Shortcuts
 Ctrl Shift M = %>% 
-Alt - = <-
+Alt - = <- 
 Ctrl Alt I = Insert new R chunk
 Ctrl Alt M = Git commit
 
@@ -122,7 +122,7 @@ head(dasatinib_auc)[,1:5]
 
 
 
-```{r CCLE Expression Data Setup/Test}
+```{r CCLE Expression Data Setup/Test, cache=TRUE}
 # Load data, convert to table
 ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 dim(ccleExpData)
@@ -285,8 +285,8 @@ Noncdh1Lines2 <- select(filter(Noncdh1Lines, CCLE_Name != "Error"))
 # CCLE_Name != "2313287_STOMACH" | CCLE_Name != "AGS_STOMACH" | CCLE_Name != "BT20_BREAST" | CCLE_Name != "CAL148_BREAST" | CCLE_Name != "CAMA1_BREAST" | CCLE_Name != "CW2_LARGE_INTESTINE" | CCLE_Name != "EVSAT_BREAST" | CCLE_Name != "GCIY_STOMACH" | CCLE_Name != "GP2D_LARGE_INTESTINE" | CCLE_Name != "GP5D_LARGE_INTESTINE" | CCLE_Name != "HCC2998_LARGE_INTESTINE" | CCLE_Name != "HCT116_LARGE_INTESTINE" | CCLE_Name != "HDQP1_BREAST" | CCLE_Name != "HT115_LARGE_INTESTINE" | CCLE_Name != "IM95_STOMACH" | CCLE_Name != "KATOIII_STOMACH" | CCLE_Name != "KE39_STOMACH" | CCLE_Name != "MDAMB453_BREAST" | CCLE_Name != "MKN45_STOMACH" | CCLE_Name != "NCCSTCK140_STOMACH" | CCLE_Name != "NUGC4_STOMACH" | CCLE_Name != "OCUM1_STOMACH" | CCLE_Name != "RERFGC1B_STOMACH" | CCLE_Name != "SNU1040_LARGE_INTESTINE" | CCLE_Name != "SNU407_LARGE_INTESTINE" | CCLE_Name != "SNU5_STOMACH" | CCLE_Name != "SNU61_LARGE_INTESTINE" | CCLE_Name != "SNUC2A_LARGE_INTESTINE" | CCLE_Name != "UACC812_BREAST" | CCLE_Name != "UACC893_BREAST" | CCLE_Name != "ZR7530_BREAST"
 ```
 
-
-
+ 
+ 
 # 25_11_19
 
 ## Use cdh1Lines, Noncdh1Lines, and CCLE_dasat_BCCCGC to find expression data for mutants vs non-mutants
