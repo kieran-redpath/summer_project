@@ -1,2 +1,2 @@
 # summer_project
-Setup.
+Some required files are too large to be in this directory
