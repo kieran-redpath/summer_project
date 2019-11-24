@@ -3,7 +3,6 @@ title: "CCLE_GDSC_Analysis_Working_21_11_19"
 author: "Kieran Redpath"
 date: "21 November 2019"
 output:
-  word_document: default
   html_document: default
 ---
 
