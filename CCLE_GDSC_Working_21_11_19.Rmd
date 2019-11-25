@@ -289,7 +289,26 @@ Boxplot_data <- match(cdh1Lines$CCLE_Name, CCLE_dasat_BCCCGC$CCLE_Name)
 CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <-  1
 
 # The actual boxplot
+ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(y=AUC)) +
+  geom_boxplot()
+
+ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(group=CDH1_Mutations, y=AUC)) +
+  geom_boxplot()
 ```
 
+```{r Test AUC and IC50 Plots}
+CCLE_dasat_BCCCGC$CDH1_Mutations=FALSE
+# Add AUC, IC50, and CDH1_Mutations columns to CCLE_dasat_BCCCGC
+cdh1Lines$AUC=NA
+cdh1Lines$IC50=NA
+cdh1Lines$CDH1_Mutations=TRUE
+# Use match to combine the two
+Boxplot_data <- match(cdh1Lines$CCLE_Name, CCLE_dasat_BCCCGC$CCLE_Name)
+CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <-  TRUE
 
+ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=AUC)) +
+  geom_boxplot()
 
+ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50)) +
+  geom_boxplot()
+```
