@@ -277,7 +277,7 @@ View(cdh1Lines)
 # 25_11_19
 
 ## Add CDH1 mutation data to the existing table, then create a boxplot with CDH1 mutants and non-CDH1 mutants next to each other, telling you about IC50 values.
-```{r IC50 and AUC for Mutants vs Non-mutants Test, echo=false, include=false}
+```{r IC50 and AUC for Mutants vs Non-mutants Test, echo=FALSE, include=FALSE}
 # Add CDH1_Mutations column to CCLE_dasat_BCCCGC
 CCLE_dasat_BCCCGC$CDH1_Mutations=0
 # Add AUC, IC50, and CDH1_Mutations columns to CCLE_dasat_BCCCGC
