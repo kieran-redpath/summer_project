@@ -299,16 +299,21 @@ CCLE_dasat_BCCCGC$CDH1_Mutations=0
 cdh1Lines$AUC=NA
 cdh1Lines$IC50=NA
 cdh1Lines$CDH1_Mutations=1
-# Use match to combine the two
+# Use match to combine the two: Test version below
 Boxplot_data <- match(cdh1Lines$CCLE_Name, CCLE_dasat_BCCCGC$CCLE_Name)
-cdh1Lines <- cdh1Lines[Boxplot_data] <-  1
+#This bit doesn't work, just creates a 1x1 table of value 1.
+CCLE_dasat_BCCCGC_2 <- CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <-  1
 
+
+# Test The Standard Way
 dasat_test <- (subset(CCLE_dasat_BCCCGC, select= -c(AUC, IC50)))
 View(dasat_test)
 mut_test <- (subset(cdh1Lines, select= -c(AUC, IC50)))
 View(mut_test)
 Boxplot_test_data <- match(mut_test$CCLE_Name, dasat_test$CCLE_Name)
-mut_test <- mut_test[Boxplot_test_data] <-  1
+test <- dasat_test$CDH1_Mutations[Boxplot_test_data] <-  1
+
+# The actual boxplot
 ```
 
 
