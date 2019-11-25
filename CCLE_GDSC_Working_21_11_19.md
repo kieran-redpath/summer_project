@@ -20,7 +20,7 @@ GDSC\_AUC.csv: AUC data for GDSC cell lines, treated with a bunch of
 different drugs GDSC\_IC50.csv: IC50 data for GDSC cell lines, treated
 with a bunch of different drugs
 
-# 18\_11\_19 
+# 18\_11\_19
 
 ``` r
 setwd("~/Documents/R Data/summer_project")
