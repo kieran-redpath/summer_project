@@ -270,21 +270,6 @@ Noncdh1Lines <- Noncdh1Lines[, col_order_Noncdh1]
 # Open the new data
 View(Noncdh1Lines)
 View(cdh1Lines)
-
-# Remove the overlap between cdh1Lines and Noncdh1Lines from Noncdh1Lines- But how?
-Error <- intersect(Noncdh1Lines$CCLE_Name,cdh1Lines$CCLE_Name)
-Error <- as.list(Error)
-```
-
-```{r Misc, include=FALSE, echo=FALSE}
-#This might be almost right? It at least actually did something
-Noncdh1Lines2 <- select(filter(Noncdh1Lines, CCLE_Name != "Error"))
-
-# The list that makes up "Error": 
-
-# c("2313287_STOMACH", "AGS_STOMACH","BT20_BREAST", "CAL148_BREAST", "CAMA1_BREAST", "CW2_LARGE_INTESTINE", "EVSAT_BREAST", "GCIY_STOMACH", "GP2D_LARGE_INTESTINE", "GP5D_LARGE_INTESTINE", "HCC2998_LARGE_INTESTINE", "HCT116_LARGE_INTESTINE", "HDQP1_BREAST", "HT115_LARGE_INTESTINE", "IM95_STOMACH", "KATOIII_STOMACH", "KE39_STOMACH", "MDAMB453_BREAST", "MKN45_STOMACH", "NCCSTCK140_STOMACH", "NUGC4_STOMACH", "OCUM1_STOMACH", "RERFGC1B_STOMACH", "SNU1040_LARGE_INTESTINE","SNU407_LARGE_INTESTINE", "SNU5_STOMACH", "SNU61_LARGE_INTESTINE", "SNUC2A_LARGE_INTESTINE", "UACC812_BREAST", "UACC893_BREAST", "ZR7530_BREAST")
-
-# CCLE_Name != "2313287_STOMACH" | CCLE_Name != "AGS_STOMACH" | CCLE_Name != "BT20_BREAST" | CCLE_Name != "CAL148_BREAST" | CCLE_Name != "CAMA1_BREAST" | CCLE_Name != "CW2_LARGE_INTESTINE" | CCLE_Name != "EVSAT_BREAST" | CCLE_Name != "GCIY_STOMACH" | CCLE_Name != "GP2D_LARGE_INTESTINE" | CCLE_Name != "GP5D_LARGE_INTESTINE" | CCLE_Name != "HCC2998_LARGE_INTESTINE" | CCLE_Name != "HCT116_LARGE_INTESTINE" | CCLE_Name != "HDQP1_BREAST" | CCLE_Name != "HT115_LARGE_INTESTINE" | CCLE_Name != "IM95_STOMACH" | CCLE_Name != "KATOIII_STOMACH" | CCLE_Name != "KE39_STOMACH" | CCLE_Name != "MDAMB453_BREAST" | CCLE_Name != "MKN45_STOMACH" | CCLE_Name != "NCCSTCK140_STOMACH" | CCLE_Name != "NUGC4_STOMACH" | CCLE_Name != "OCUM1_STOMACH" | CCLE_Name != "RERFGC1B_STOMACH" | CCLE_Name != "SNU1040_LARGE_INTESTINE" | CCLE_Name != "SNU407_LARGE_INTESTINE" | CCLE_Name != "SNU5_STOMACH" | CCLE_Name != "SNU61_LARGE_INTESTINE" | CCLE_Name != "SNUC2A_LARGE_INTESTINE" | CCLE_Name != "UACC812_BREAST" | CCLE_Name != "UACC893_BREAST" | CCLE_Name != "ZR7530_BREAST"
 ```
 
 
@@ -299,19 +284,9 @@ CCLE_dasat_BCCCGC$CDH1_Mutations=0
 cdh1Lines$AUC=NA
 cdh1Lines$IC50=NA
 cdh1Lines$CDH1_Mutations=1
-# Use match to combine the two: Test version below
+# Use match to combine the two
 Boxplot_data <- match(cdh1Lines$CCLE_Name, CCLE_dasat_BCCCGC$CCLE_Name)
-#This bit doesn't work, just creates a 1x1 table of value 1.
-CCLE_dasat_BCCCGC_2 <- CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <-  1
-
-
-# Test The Standard Way
-dasat_test <- (subset(CCLE_dasat_BCCCGC, select= -c(AUC, IC50)))
-View(dasat_test)
-mut_test <- (subset(cdh1Lines, select= -c(AUC, IC50)))
-View(mut_test)
-Boxplot_test_data <- match(mut_test$CCLE_Name, dasat_test$CCLE_Name)
-test <- dasat_test$CDH1_Mutations[Boxplot_test_data] <-  1
+CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <-  1
 
 # The actual boxplot
 ```
