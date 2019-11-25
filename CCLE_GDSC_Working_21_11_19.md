@@ -77,7 +77,7 @@ library(tidyverse)
 
     ## Warning: package 'tidyverse' was built under R version 3.5.3
 
-    ## -- Attaching packages -------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --
+    ## -- Attaching packages -------------------------------------------------------------------------------- tidyverse 1.2.1 --
 
     ## v tibble  2.1.3     v purrr   0.3.3
     ## v tidyr   1.0.0     v stringr 1.4.0
@@ -95,7 +95,7 @@ library(tidyverse)
 
     ## Warning: package 'forcats' was built under R version 3.5.3
 
-    ## -- Conflicts ----------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts ----------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::between()   masks data.table::between()
     ## x tidyr::extract()   masks magrittr::extract()
     ## x dplyr::filter()    masks stats::filter()
@@ -1285,21 +1285,35 @@ Noncdh1Lines <- Noncdh1Lines[, col_order_Noncdh1]
 # Open the new data
 View(Noncdh1Lines)
 View(cdh1Lines)
-
-# Remove the overlap between cdh1Lines and Noncdh1Lines from Noncdh1Lines- But how?
-Error <- intersect(Noncdh1Lines$CCLE_Name,cdh1Lines$CCLE_Name)
-Error <- as.list(Error)
-
-#This might be almost right? It at least actually did something
-Noncdh1Lines2 <- select(filter(Noncdh1Lines, CCLE_Name != "Error"))
-
-# The List that makes up "Error": 
-
-# c("2313287_STOMACH", "AGS_STOMACH","BT20_BREAST", "CAL148_BREAST", "CAMA1_BREAST", "CW2_LARGE_INTESTINE", "EVSAT_BREAST", "GCIY_STOMACH", "GP2D_LARGE_INTESTINE", "GP5D_LARGE_INTESTINE", "HCC2998_LARGE_INTESTINE", "HCT116_LARGE_INTESTINE", "HDQP1_BREAST", "HT115_LARGE_INTESTINE", "IM95_STOMACH", "KATOIII_STOMACH", "KE39_STOMACH", "MDAMB453_BREAST", "MKN45_STOMACH", "NCCSTCK140_STOMACH", "NUGC4_STOMACH", "OCUM1_STOMACH", "RERFGC1B_STOMACH", "SNU1040_LARGE_INTESTINE","SNU407_LARGE_INTESTINE", "SNU5_STOMACH", "SNU61_LARGE_INTESTINE", "SNUC2A_LARGE_INTESTINE", "UACC812_BREAST", "UACC893_BREAST", "ZR7530_BREAST")
-
-# CCLE_Name != "2313287_STOMACH" | CCLE_Name != "AGS_STOMACH" | CCLE_Name != "BT20_BREAST" | CCLE_Name != "CAL148_BREAST" | CCLE_Name != "CAMA1_BREAST" | CCLE_Name != "CW2_LARGE_INTESTINE" | CCLE_Name != "EVSAT_BREAST" | CCLE_Name != "GCIY_STOMACH" | CCLE_Name != "GP2D_LARGE_INTESTINE" | CCLE_Name != "GP5D_LARGE_INTESTINE" | CCLE_Name != "HCC2998_LARGE_INTESTINE" | CCLE_Name != "HCT116_LARGE_INTESTINE" | CCLE_Name != "HDQP1_BREAST" | CCLE_Name != "HT115_LARGE_INTESTINE" | CCLE_Name != "IM95_STOMACH" | CCLE_Name != "KATOIII_STOMACH" | CCLE_Name != "KE39_STOMACH" | CCLE_Name != "MDAMB453_BREAST" | CCLE_Name != "MKN45_STOMACH" | CCLE_Name != "NCCSTCK140_STOMACH" | CCLE_Name != "NUGC4_STOMACH" | CCLE_Name != "OCUM1_STOMACH" | CCLE_Name != "RERFGC1B_STOMACH" | CCLE_Name != "SNU1040_LARGE_INTESTINE" | CCLE_Name != "SNU407_LARGE_INTESTINE" | CCLE_Name != "SNU5_STOMACH" | CCLE_Name != "SNU61_LARGE_INTESTINE" | CCLE_Name != "SNUC2A_LARGE_INTESTINE" | CCLE_Name != "UACC812_BREAST" | CCLE_Name != "UACC893_BREAST" | CCLE_Name != "ZR7530_BREAST"
 ```
 
 # 25\_11\_19
 
-## Use cdh1Lines, Noncdh1Lines, and CCLE\_dasat\_BCCCGC to find expression data for mutants vs non-mutants
+## Add CDH1 mutation data to the existing table, then create a boxplot with CDH1 mutants and non-CDH1 mutants next to each other, telling you about IC50 values.
+
+``` r
+CCLE_dasat_BCCCGC$CDH1_Mutations=FALSE
+# Add AUC, IC50, and CDH1_Mutations columns to CCLE_dasat_BCCCGC
+cdh1Lines$AUC=NA
+cdh1Lines$IC50=NA
+cdh1Lines$CDH1_Mutations=TRUE
+# Use match to combine the two
+Boxplot_data <- match(cdh1Lines$CCLE_Name, CCLE_dasat_BCCCGC$CCLE_Name)
+CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <-  TRUE
+
+ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=AUC)) +
+  geom_boxplot()
+```
+
+    ## Warning: Removed 178 rows containing non-finite values (stat_boxplot).
+
+![](CCLE_GDSC_Working_21_11_19_files/figure-gfm/AUC%20and%20IC50%20Plots-1.png)<!-- -->
+
+``` r
+ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50)) +
+  geom_boxplot()
+```
+
+    ## Warning: Removed 178 rows containing non-finite values (stat_boxplot).
+
+![](CCLE_GDSC_Working_21_11_19_files/figure-gfm/AUC%20and%20IC50%20Plots-2.png)<!-- -->
