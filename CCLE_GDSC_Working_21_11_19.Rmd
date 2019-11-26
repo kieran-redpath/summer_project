@@ -11,18 +11,27 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Shortcuts
-Ctrl Shift M = %>% 
-Alt - = <- 
+
+Ctrl Shift M = %>%
+
+Alt - = <-
+
 Ctrl Alt I = Insert new R chunk
+
 Ctrl Alt M = Git commit
 
 ## What exactly are these files?
+
 DepMap-2018q3-celllines.csv: tells you more information about the cell lines
+
 CCLE_mutations.csv: information on what mutations are present in CCLE cell lines
+
 CCLE_RNAseq_genes_counts_20180929.gct: expression data for a bunch of genes in CCLE cell lines
 
 gdsc_codes_1.csv: tells you about drugs (GDSC ID, actual name, etc.)
+
 GDSC_AUC.csv: AUC data for GDSC cell lines, treated with a bunch of different drugs
+
 GDSC_IC50.csv: IC50 data for GDSC cell lines, treated with a bunch of different drugs
 
 # 18_11_19
@@ -310,19 +319,29 @@ ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50, fill=CDH1_
 # "High" will be the top 80% of expression levels (in "CDH1_Expression")
 # These can then be plotted on the boxplot
 # First create the appropriate column in "CCLE_dasat_BCCCGC", and label everything as "High" by default
-CCLE_dasat_BCCCGC$CDH1_Expression="High"
+CCLE_dasat_BCCCGC$CDH1_Expression= NA
 # Attempt to create a data frame that just has data for CDH1 (Ensembl: ENSG00000039068.14), but across every cell line
-CDH1_Exp_Levels <- subset(ccleExpData, rownames(ccleExpData)=="ENSG00000039068.14")
+CDH1_Exp_Levels <- subset(expDat, rownames(expDat)=="ENSG00000039068.14")
 #Reorient "CDH1_Exp_Levels" so it has the same orientation as "CCLE_dasat_BCCCGC"
 CDH1_Exp_Levels <- t(CDH1_Exp_Levels)
-## *Up to Here!*
-#Create a data frame for the next set of boxplots. Need to first match "CCLE_Name" on everything, then
-Boxplot_data_2 <- match(CCLE_dasat_BCCCGC$CCLE_Name, ccleExpData$colnames)
-CCLE_dasat_BCCCGC$CDH1_Expression[Boxplot_data_2] <- "Low"
+View(CDH1_Exp_Levels)
+# Move row names into the first column, and name it "CCLE_Name"
+CDH1_Exp_Levels <- as.data.frame(CDH1_Exp_Levels)
+setDT(CDH1_Exp_Levels, keep.rownames = "CCLE_Name")[]
+# Filter so lowest 20% is "Low", top 80% is "High" (can replace values later on)
+CDH1_Exp_Levels$CDH1_Expression <- ifelse(CDH1_Exp_Levels$ENSG00000039068.14 < quantile(CDH1_Exp_Levels$ENSG00000039068.14, 0.4), "Low","High")
+
+### *Up to Here*
+# Create a subset of "CDH1_Exp_Levels", icnluding only those that match "CCLE_dasat_CCBCGC" Note that "CCLE_dasat_BCCCGC" has 202 entries, but we only have CDH1 expression data from 142 of these (those in "Boxplot_data_2")
+Boxplot_data_2 <-  setDT(CDH1_Exp_Levels)[CCLE_Name %chin% CCLE_dasat_BCCCGC$CCLE_Name]
+View(Boxplot_data_2)
+
+Boxplot_data_2 <- match( CCLE_dasat_BCCCGC$CCLE_Name, CDH1_Exp_Levels$CCLE_Name)
+CCLE_dasat_BCCCGC$CDH1_Expression[Boxplot_data] <- "YES"
 
 # AUC ggplot (with CDH1 expression levels)
 ggplot(data=CCLE_dasat_BCCCGC, mapping=aes(x=CDH1_Expression, y=AUC, fill=CDH1_Expression)) +
-  labs(x= "Level of CDh1 Expression", y="IC50", caption="(Data from GDSC and CCLE)") +
+  labs(x= "Level of CDH1 Expression", y="IC50", caption="(Data from GDSC and CCLE)") +
   ggtitle("Dasatinib Data", subtitle="IC50 vs Numer of CDH1 Mutations") +
   geom_boxplot() +
   geom_beeswarm()
@@ -338,4 +357,4 @@ Add in CDH1 expression to your dataframe.
 look at low expression (bottom 20% of expression) vs AUC and IC50 (boxplot and overlaid beeswarm if you have a lot of data).
 match CCLE_Name to expression data (so you get CDH1 expression levels for the right cell lines) to pull out those that match your data frame and add them to "CCLE_dasat_BCCCGC"
 
-
+Also do expression vs mutation status.
