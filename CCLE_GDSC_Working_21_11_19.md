@@ -5,20 +5,34 @@ Kieran Redpath
 
 ## Shortcuts
 
-Ctrl Shift M = %\>% Alt - = \<- Ctrl Alt I = Insert new R chunk Ctrl Alt
-M = Git commit
+Ctrl Shift M = %\>%
+
+Alt - = \<-
+
+Ctrl Alt I = Insert new R chunk
+
+Ctrl Alt M = Git commit
 
 ## What exactly are these files?
 
 DepMap-2018q3-celllines.csv: tells you more information about the cell
-lines CCLE\_mutations.csv: information on what mutations are present in
-CCLE cell lines CCLE\_RNAseq\_genes\_counts\_20180929.gct: expression
-data for a bunch of genes in CCLE cell lines
+lines
+
+CCLE\_mutations.csv: information on what mutations are present in CCLE
+cell lines
+
+CCLE\_RNAseq\_genes\_counts\_20180929.gct: expression data for a bunch
+of genes in CCLE cell lines
 
 gdsc\_codes\_1.csv: tells you about drugs (GDSC ID, actual name, etc.)
+
 GDSC\_AUC.csv: AUC data for GDSC cell lines, treated with a bunch of
-different drugs GDSC\_IC50.csv: IC50 data for GDSC cell lines, treated
-with a bunch of different drugs
+different drugs
+
+GDSC\_IC50.csv: IC50 data for GDSC cell lines, treated with a bunch of
+different drugs
+
+# ✓ denotes chunks that should definitely work fine and aren’t broken
 
 # 18\_11\_19
 
@@ -77,7 +91,7 @@ library(tidyverse)
 
     ## Warning: package 'tidyverse' was built under R version 3.5.3
 
-    ## -- Attaching packages -------------------------------------------------------------------------------- tidyverse 1.2.1 --
+    ## -- Attaching packages ------------------------------------------------------------------------------------------------ tidyverse 1.2.1 --
 
     ## v tibble  2.1.3     v purrr   0.3.3
     ## v tidyr   1.0.0     v stringr 1.4.0
@@ -95,7 +109,7 @@ library(tidyverse)
 
     ## Warning: package 'forcats' was built under R version 3.5.3
 
-    ## -- Conflicts ----------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts --------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::between()   masks data.table::between()
     ## x tidyr::extract()   masks magrittr::extract()
     ## x dplyr::filter()    masks stats::filter()
@@ -105,6 +119,12 @@ library(tidyverse)
     ## x purrr::set_names() masks magrittr::set_names()
     ## x tidyr::spread()    masks CePa::spread()
     ## x purrr::transpose() masks data.table::transpose()
+
+``` r
+library(ggbeeswarm)
+```
+
+    ## Warning: package 'ggbeeswarm' was built under R version 3.5.3
 
 ``` r
 # Read Data
@@ -391,7 +411,7 @@ drugCodes %>% dplyr::filter(., drug_name == "Dasatinib")
 # Extract Dasatinib data
 dasatinib_ic50 <- gdsc_ic50 %>% dplyr::filter(., X=="GDSC:51")
 dasatinib_auc <- gdsc_auc %>% dplyr::filter(., X=="GDSC:51")
-# Count non-NA values
+# Count non-NA values (! means the opposite of is.na, so is *not* NA)
 sum(!is.na(dasatinib_ic50))
 ```
 
@@ -577,7 +597,7 @@ v <- voom(dge, plot=TRUE)
 # Note that the voom procedure produces logged data
 expDat <- v$E
 
-# Plot the post-normalised data -> the important part
+# Plot the post-normalised data. "expDat" is the important bit, that you'll filter then graph
 # Note there is now less variation in the "bump" above 5 - instead the 
 # variation has been "moved" to the very low abundance genes (below -5).
 plot(density(expDat[,1]))
@@ -608,7 +628,8 @@ expDat[1:5,1:5]
 # 19\_11\_19
 
 ``` r
-#Create a vector containing the shared sample names (the intersect of identical data)
+#Here you will create the useful files that you will graph later on- these contain data only for those cell lines that we have CDH1 expression data, CDH1 mutation status, IC50, and AUC for.
+#Create a vector containing the shared sample names (the intersect of identical data). It doesn't matter that this just uses expression and ic50, as any samples we have IC50 for, we also have auc for.
 commonSamples <- intersect(names(dasatinib_ic50),colnames(expDat))
 head(commonSamples)
 ```
@@ -627,6 +648,15 @@ head(ic50_match)
     ## [1] 18 19 20 21 22 23
 
 ``` r
+# Figure out which IC50 observations are within commonSamples (match)
+auc_match <- match(commonSamples, names(dasatinib_auc))
+# Interpret this 
+head(auc_match)
+```
+
+    ## [1] 18 19 20 21 22 23
+
+``` r
 # Figure out which expDat observations are within commonSamples (match)
 expDat_match <- match(commonSamples, colnames(expDat))
 head(expDat_match)
@@ -635,8 +665,12 @@ head(expDat_match)
     ## [1] 16 18 19 20 21 22
 
 ``` r
+#These "*_sort" objects will be what you create graphs from later on
+
 # Create a new IC50 variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
 dasatinib_ic50_sort <- dasatinib_ic50[na.omit(ic50_match)]
+# Create a new auc variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
+dasatinib_auc_sort <- dasatinib_auc[na.omit(auc_match)]
 # Create a new expDat variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
 expDat_sort <- expDat[ , na.omit(expDat_match)]
 
@@ -680,56 +714,7 @@ table(tissue_sort)
     ##                                 14
 
 ``` r
-# Create a vector containing the shared sample names (the intersect of identical data)
-commonSamples <- intersect(names(dasatinib_auc),colnames(expDat))
-head(commonSamples)
-```
-
-    ## [1] "A101D_SKIN"                  "A172_CENTRAL_NERVOUS_SYSTEM"
-    ## [3] "A204_SOFT_TISSUE"            "A2058_SKIN"                 
-    ## [5] "A253_SALIVARY_GLAND"         "A2780_OVARY"
-
-``` r
-# Figure out which IC50 observations are within commonSamples (match)
-auc_match <- match(commonSamples, names(dasatinib_auc))
-# Interpret this 
-head(auc_match)
-```
-
-    ## [1] 18 19 20 21 22 23
-
-``` r
-# Figure out which expDat observations are within commonSamples (match)
-expDat_auc_match <- match(commonSamples, colnames(expDat))
-head(expDat_match)
-```
-
-    ## [1] 16 18 19 20 21 22
-
-``` r
-# Create a new auc variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
-dasatinib_auc_sort <- dasatinib_auc[na.omit(auc_match)]
-# Create a new expDat variable containing samples from commonSamples (na.omit) and sorted in the same order (also due to na.omit)
-expDat_auc_sort <- expDat[ , na.omit(expDat_auc_match)]
-
 # Note that the order is now the same
-expDat_auc_sort[1:5,1:5]
-```
-
-    ##                   A101D_SKIN A172_CENTRAL_NERVOUS_SYSTEM A204_SOFT_TISSUE
-    ## ENSG00000223972.4  -4.891718                   -4.635942        -5.287784
-    ## ENSG00000227232.4   2.749732                    2.480690         2.186328
-    ## ENSG00000243485.2  -4.361203                   -5.483939        -4.802357
-    ## ENSG00000237613.2  -6.476680                   -4.635942        -6.024749
-    ## ENSG00000268020.2  -6.476680                   -7.805867        -6.024749
-    ##                   A2058_SKIN A253_SALIVARY_GLAND
-    ## ENSG00000223972.4  -4.248102           -7.983744
-    ## ENSG00000227232.4   2.699097            2.687797
-    ## ENSG00000243485.2  -5.833065           -5.661816
-    ## ENSG00000237613.2  -5.347638           -5.661816
-    ## ENSG00000268020.2  -8.154993           -6.398781
-
-``` r
 dasatinib_auc_sort[1:5]
 ```
 
@@ -775,7 +760,8 @@ l <- as.list(CCLElinesBCCCGC$CCLE_Name)
 rownames(CCLElinesBCCCGC) <- l
 CCLElinesBCCCGC <- select (CCLElinesBCCCGC, -c(CCLE_Name))
 
-#Combine dasatinib data and CCLElinesBCCCGC
+## One way to combine data by a specific thing:
+# Combine dasatinib data and CCLElinesBCCCGC
 CCLE_dasat_BCCCGC <- merge(CCLElinesBCCCGC,dasat_data_BCCCGC,by=0, all=T)
 names(CCLE_dasat_BCCCGC)[names(CCLE_dasat_BCCCGC) == 'Row.names'] <- 'CCLE_Name'
 View(CCLE_dasat_BCCCGC)
@@ -1282,38 +1268,60 @@ Noncdh1Lines %>%
 col_order_Noncdh1 <- c("CCLE_Name","Broad_ID","Aliases","COSMIC_ID","Sanger ID","Primary Disease","Subtype Disease","Gender","Source")
 Noncdh1Lines <- Noncdh1Lines[, col_order_Noncdh1]
 
-# Open the new data
+# Open the new data and the old data. these files will probably be used later on
 View(Noncdh1Lines)
 View(cdh1Lines)
 ```
 
 # 25\_11\_19
 
-## Add CDH1 mutation data to the existing table, then create a boxplot with CDH1 mutants and non-CDH1 mutants next to each other, telling you about IC50 values.
+## Add CDH1 mutation data to the existing table, then create a boxplot with CDH1 mutants and non-CDH1 mutants next to each other, telling you about IC50 and AUC values
 
 ``` r
-CCLE_dasat_BCCCGC$CDH1_Mutations=FALSE
-# Add AUC, IC50, and CDH1_Mutations columns to CCLE_dasat_BCCCGC
+# Add CDH1_Mutations column to CCLE_dasat_BCCCGC
+CCLE_dasat_BCCCGC$CDH1_Mutations="Zero"
+# Add AUC, IC50, and CDH1_Mutations columns to cdh1Lines
 cdh1Lines$AUC=NA
 cdh1Lines$IC50=NA
-cdh1Lines$CDH1_Mutations=TRUE
-# Use match to combine the two
+cdh1Lines$CDH1_Mutations="One"
+# Use match to combine the two. Takes all those observations from cdh1Lines and incorporates them into "CCLE_dasat_BCCCGC$CDH1_Mutations", calling them "One" if they're present in cdh1Lines, leaving the "Zero" if they aren't
+# Join would be better, so probably use that next time
 Boxplot_data <- match(cdh1Lines$CCLE_Name, CCLE_dasat_BCCCGC$CCLE_Name)
-CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <-  TRUE
+CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <- "One"
+# Also create a column for later ("CDH1_Expression")
+CCLE_dasat_BCCCGC$CDH1_Expression= NA
 
-ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=AUC)) +
-  geom_boxplot()
+# AUC ggplot (with CDH1 mutation status)
+ggplot(data=CCLE_dasat_BCCCGC, mapping=aes(x=CDH1_Mutations, y=AUC, fill=CDH1_Mutations)) +
+  labs(x="Number of CDH1 Mutations", y="AUC", caption="(Data from GDSC and CCLE)") +
+  ggtitle("Dasatinib Data", subtitle="AUC vs Number of CDH1 Mutations") +
+  geom_boxplot()+
+  geom_beeswarm()
 ```
 
     ## Warning: Removed 178 rows containing non-finite values (stat_boxplot).
 
-![](CCLE_GDSC_Working_21_11_19_files/figure-gfm/AUC%20and%20IC50%20Plots-1.png)<!-- -->
+    ## Warning: Removed 178 rows containing missing values (position_beeswarm).
+
+![](CCLE_GDSC_Working_21_11_19_files/figure-gfm/AUC%20and%20IC50%20Plots-%20Intro%20Version-1.png)<!-- -->
 
 ``` r
-ggplot(data = CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50)) +
-  geom_boxplot()
+# C50 ggplot (with CDH1 mutation status)
+ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50, fill=CDH1_Mutations)) +
+  labs(x="Number of CDH1 Mutations", y="IC50", caption="(Data from GDSC and CCLE)") +
+  ggtitle("Dasatinib Data", subtitle="IC50 vs Number of CDH1 Mutations") +
+  geom_boxplot() +
+  geom_beeswarm()
 ```
 
     ## Warning: Removed 178 rows containing non-finite values (stat_boxplot).
+    
+    ## Warning: Removed 178 rows containing missing values (position_beeswarm).
 
-![](CCLE_GDSC_Working_21_11_19_files/figure-gfm/AUC%20and%20IC50%20Plots-2.png)<!-- -->
+![](CCLE_GDSC_Working_21_11_19_files/figure-gfm/AUC%20and%20IC50%20Plots-%20Intro%20Version-2.png)<!-- -->
+
+``` r
+#This will be used a lot in the next document
+write.csv(CCLE_dasat_BCCCGC,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE_dasat_BCCCGC.csv", row.names = TRUE)
+write.csv(expDat_sort,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/expDat_sort.csv", row.names = TRUE)
+```

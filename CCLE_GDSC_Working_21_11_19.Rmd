@@ -51,7 +51,7 @@ library(tidyverse)
 library(ggbeeswarm)
 ```
 
-```{r Data: Setup ✓}
+```{r Data: Setup}
 # Read Data
 depMapCCLEmut <- fread('CCLE_GDSC/Data/CCLE_mutations.csv', sep=',')
 dim(depMapCCLEmut)
@@ -74,7 +74,7 @@ gn <- depMapCCLEmut$Hugo_Symbol
 
 
 
-```{r CDH1 ✓}
+```{r CDH1}
 # Number of CDH1 mutations
 sum(gn == "CDH1")
 # Lines with CDH1 mutations (ordered by mutation counts)
@@ -92,7 +92,7 @@ cdh1Lines <- cdh1Lines[, col_order_cdh1]
 
 
 
-```{r Drug Data: Setup ✓}
+```{r Drug Data: Setup}
 # Load Data
 gdsc_auc <- read.csv('CCLE_GDSC/Data/GDSC_AUC.csv', sep=',')
 gdsc_ic50 <- read.csv('CCLE_GDSC/Data/GDSC_IC50.csv', sep=',')
@@ -104,7 +104,7 @@ gdsc_ic50[1:5,1:5]
 
 
 
-```{r Drug Data: Dasatinib ✓}
+```{r Drug Data: Dasatinib}
 # GDSC drug codes
 drugCodes <- read.csv('CCLE_GDSC/Data/gdsc_codes_1.csv', sep= ',')
 head(drugCodes)
@@ -134,7 +134,7 @@ head(dasatinib_auc)[,1:5]
 
 
 
-```{r CCLE Expression Data Setup/Test ✓}
+```{r CCLE Expression Data Setup/Test}
 # Load data, convert to table
 ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 dim(ccleExpData)
@@ -149,7 +149,7 @@ for(i in 2:ncol(logExpDat)) lines(density(logExpDat[,i]))
 
 
 
-```{r CCLE Expression Data Normalised/Unfiltered ✓}
+```{r CCLE Expression Data Normalised/Unfiltered}
 # Normalise via limma::voom (see page 70 of Limma usersguide)
 # Note - I'm not filtering the genes
 dge <- DGEList(counts=ccleExpData)
@@ -175,7 +175,7 @@ expDat[1:5,1:5]
 ## Now you can start having a play with the expression data in combination with the Dasatinib AUC and IC50 information. Can also add in CDH1 mutation data as needed.
 
 # 19_11_19
-```{r Extract Tissue Info for IC50, AUC, and expDat ✓}
+```{r Extract Tissue Info for IC50, AUC, and expDat}
 #Here you will create the useful files that you will graph later on- these contain data only for those cell lines that we have CDH1 expression data, CDH1 mutation status, IC50, and AUC for.
 #Create a vector containing the shared sample names (the intersect of identical data). It doesn't matter that this just uses expression and ic50, as any samples we have IC50 for, we also have auc for.
 commonSamples <- intersect(names(dasatinib_ic50),colnames(expDat))
@@ -212,7 +212,6 @@ tissue_sort <- strsplit(names(dasatinib_ic50_sort), "_") %>%
 table(tissue_sort)
 
 # Note that the order is now the same
-expDat_auc_sort[1:5,1:5]
 dasatinib_auc_sort[1:5]
 dasatinib_ic50_sort[1:5]
 ```
@@ -222,7 +221,7 @@ dasatinib_ic50_sort[1:5]
 # 20_11_19
 
 ## CCLE_dasat_BCCCGC is *all* BC, CC, and GC lines with GDSC data
-```{r Find Information on Dasatinib Treatment for CDH1 Mutant Breast, Colon and Gastric Cancer Lines ✓}
+```{r Find Information on Dasatinib Treatment for CDH1 Mutant Breast, Colon and Gastric Cancer Lines}
 # Create the filtered file, removing cell line info. Leaves you with IC50 for BC, CC, GC
 tissue_sort_BCCCGC <- strsplit(names(dasatinib_ic50_sort), "_") %>% 
   lapply(., function(x) paste0(x[-1], collapse='_')) %>%  
@@ -258,7 +257,7 @@ View(CCLE_dasat_BCCCGC)
 # 21_11_19
 
 ## Create a file with CDH1 non-mutants
-```{r CDH1 Non-mutants ✓}
+```{r CDH1 Non-mutants}
 # Number of lines without CDH1 mutations
 sum(gn != "CDH1")
 # Lines without CDH1 mutations (ordered by mutation counts)
@@ -282,8 +281,8 @@ View(cdh1Lines)
 
 # 25_11_19
 
-## Add CDH1 mutation data to the existing table, then create a boxplot with CDH1 mutants and non-CDH1 mutants next to each other, telling you about IC50 and AUC values.
-```{r AUC and IC50 Plots- Intro Version ✓}
+## Add CDH1 mutation data to the existing table, then create a boxplot with CDH1 mutants and non-CDH1 mutants next to each other, telling you about IC50 and AUC values
+```{r AUC and IC50 Plots- Intro Version}
 # Add CDH1_Mutations column to CCLE_dasat_BCCCGC
 CCLE_dasat_BCCCGC$CDH1_Mutations="Zero"
 # Add AUC, IC50, and CDH1_Mutations columns to cdh1Lines
@@ -294,14 +293,16 @@ cdh1Lines$CDH1_Mutations="One"
 # Join would be better, so probably use that next time
 Boxplot_data <- match(cdh1Lines$CCLE_Name, CCLE_dasat_BCCCGC$CCLE_Name)
 CCLE_dasat_BCCCGC$CDH1_Mutations[Boxplot_data] <- "One"
+# Also create a column for later ("CDH1_Expression")
+CCLE_dasat_BCCCGC$CDH1_Expression= NA
 
-#AUC ggplot (with CDH1 mutation status)
+# AUC ggplot (with CDH1 mutation status)
 ggplot(data=CCLE_dasat_BCCCGC, mapping=aes(x=CDH1_Mutations, y=AUC, fill=CDH1_Mutations)) +
   labs(x="Number of CDH1 Mutations", y="AUC", caption="(Data from GDSC and CCLE)") +
   ggtitle("Dasatinib Data", subtitle="AUC vs Number of CDH1 Mutations") +
   geom_boxplot()+
   geom_beeswarm()
-#IC50 ggplot (with CDH1 mutation status)
+# C50 ggplot (with CDH1 mutation status)
 ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50, fill=CDH1_Mutations)) +
   labs(x="Number of CDH1 Mutations", y="IC50", caption="(Data from GDSC and CCLE)") +
   ggtitle("Dasatinib Data", subtitle="IC50 vs Number of CDH1 Mutations") +
@@ -309,60 +310,8 @@ ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50, fill=CDH1_
   geom_beeswarm()
 ```
 
-# 26_11_19
-## Not included yet cause it isn't done
-```{r Add CDH1 Expression Data, and plot it on the boxplot- Real Version, echo=FALSE, include=FALSE}
-# "Low" will be the bottom 20% of expression levels (in "CDH1_Expression")
-# "High" will be the top 80% of expression levels (in "CDH1_Expression")
-# First create the appropriate column in "CCLE_dasat_BCCCGC", and label everything as "High" by default
-CCLE_dasat_BCCCGC$CDH1_Expression= NA
-# Attempt to create a data frame that just has data for CDH1 (Ensembl: ENSG00000039068.14), but across every cell line
-CDH1_Exp_Levels <- subset(expDat_sort, rownames(expDat_sort)=="ENSG00000039068.14")
-#Reorient "CDH1_Exp_Levels" so it has the same orientation as "CCLE_dasat_BCCCGC"
-CDH1_Exp_Levels <- t(CDH1_Exp_Levels)
-View(CDH1_Exp_Levels)
-# Move row names into the first column, and name it "CCLE_Name"
-CDH1_Exp_Levels <- as.data.frame(CDH1_Exp_Levels)
-setDT(CDH1_Exp_Levels, keep.rownames = "CCLE_Name")[]
-# Filter so lowest 20% is "Low", top 80% is "High" (can replace values later on)
-CDH1_Exp_Levels$CDH1_Expression <- ifelse(CDH1_Exp_Levels$ENSG00000039068.14 < quantile(CDH1_Exp_Levels$ENSG00000039068.14, 0.4), "Low","High")
-
-####*Up to Here*#### 
-# Create a subset of "CDH1_Exp_Levels", icnluding only those that match "CCLE_dasat_CCBCGC" Note that "CCLE_dasat_BCCCGC" has 202 entries, but we only have CDH1 expression data from 142 of these (those in "Boxplot_data_2")
-Boxplot_data_2 <-  setDT(CDH1_Exp_Levels)[CCLE_Name %chin% CCLE_dasat_BCCCGC$CCLE_Name]
-View(Boxplot_data_2)
-
-Boxplot_data_2 <- match( CCLE_dasat_BCCCGC$CCLE_Name, CDH1_Exp_Levels$CCLE_Name)
-CCLE_dasat_BCCCGC$CDH1_Expression[Boxplot_data_2] <- 
-
-####################
-
-# AUC ggplot (with CDH1 expression levels)
-ggplot(data=CCLE_dasat_BCCCGC, mapping=aes(x=CDH1_Expression, y=AUC, fill=CDH1_Expression)) +
-  labs(x= "Level of CDH1 Expression", y="IC50", caption="(Data from GDSC and CCLE)") +
-  ggtitle("Dasatinib Data", subtitle="IC50 vs Numer of CDH1 Mutations") +
-  geom_boxplot() +
-  geom_beeswarm()
-# IC50 ggplot (with CDH1 expression levels)
-ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Expression, y=IC50, fill=CDH1_Expression)) +
-  labs(x= "Level of CDH1 Expression",y="IC50", caption="(Data from GDSC and CCLE)") +
-  ggtitle("Dasatinib Data", subtitle="IC50 vs Number of CDH1 Mutations") +
-  geom_boxplot() +
-  geom_beeswarm()
+```{r Save Some Important Files for the Next Steps}
+#This will be used a lot in the next document
+write.csv(CCLE_dasat_BCCCGC,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE_dasat_BCCCGC.csv", row.names = TRUE)
+write.csv(expDat_sort,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/expDat_sort.csv", row.names = TRUE)
 ```
-
-Save some data.frames as files using save.csv, so you can just load them back in and not worry about being in the same markdown.
-
-Work back through everything and double check that it's all sorted in the right way- I.e. at no point have  sorted things been joined in the wrong order (which would give you a table with absolutely no correlation).
-
-Use a control- note the expression data for a particular cell line and CDH1, so you can double check that they remain associated.
-
-Learn how to use the join command!!! Look at the book and Michaela's notes.
-
-Then Get Back to Your Last Chunk:
-
-Add in CDH1 expression to your dataframe.
-look at low expression (bottom 20% of expression) vs AUC and IC50 (boxplot and overlaid beeswarm if you have a lot of data).
-match CCLE_Name to expression data (so you get CDH1 expression levels for the right cell lines) to pull out those that match your data frame and add them to "CCLE_dasat_BCCCGC"
-
-Also do expression vs mutation status (I.e does expression level correlate with mutation)
