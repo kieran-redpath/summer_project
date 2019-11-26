@@ -1321,7 +1321,36 @@ ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50, fill=CDH1_
 ![](CCLE_GDSC_Working_21_11_19_files/figure-gfm/AUC%20and%20IC50%20Plots-%20Intro%20Version-2.png)<!-- -->
 
 ``` r
+# Attempt to create a data frame that just has data for CDH1 (Ensembl: ENSG00000039068.14), but across every cell line
+CDH1_Exp_Levels <- subset(expDat_sort, rownames(expDat_sort)=="ENSG00000039068.14")
+#Reorient "CDH1_Exp_Levels" so it has the same orientation as "CCLE_dasat_BCCCGC"
+CDH1_Exp_Levels <- t(CDH1_Exp_Levels)
+View(CDH1_Exp_Levels)
+# Move row names into the first column, and name it "CCLE_Name"
+CDH1_Exp_Levels <- as.data.frame(CDH1_Exp_Levels)
+setDT(CDH1_Exp_Levels, keep.rownames = "CCLE_Name")[]
+```
+
+    ##                                        CCLE_Name ENSG00000039068.14
+    ##   1:                                  A101D_SKIN         -0.3000917
+    ##   2:                 A172_CENTRAL_NERVOUS_SYSTEM         -0.2134103
+    ##   3:                            A204_SOFT_TISSUE          1.2637323
+    ##   4:                                  A2058_SKIN         -1.1663080
+    ##   5:                         A253_SALIVARY_GLAND          8.4593129
+    ##  ---                                                               
+    ## 617: WSUDLCL2_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE          2.1341827
+    ## 618:                               YAPC_PANCREAS          8.9280410
+    ## 619:                 YH13_CENTRAL_NERVOUS_SYSTEM          2.1131528
+    ## 620:                 YKG1_CENTRAL_NERVOUS_SYSTEM         -0.8683032
+    ## 621:                               ZR7530_BREAST          4.0726827
+
+``` r
+# Filter so lowest 20% is "Low", top 80% is "High" (can replace values later on)
+CDH1_Exp_Levels$CDH1_Expression <- ifelse(CDH1_Exp_Levels$ENSG00000039068.14 < quantile(CDH1_Exp_Levels$ENSG00000039068.14, 0.4), "Low","High")
+```
+
+``` r
 #This will be used a lot in the next document
-write.csv(CCLE_dasat_BCCCGC,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE_dasat_BCCCGC.csv", row.names = TRUE)
-write.csv(expDat_sort,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/expDat_sort.csv", row.names = TRUE)
+write.csv(CCLE_dasat_BCCCGC,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE_dasat_BCCCGC.csv", row.names = FALSE)
+write.csv(CDH1_Exp_Levels,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CDH1_Exp_Levels.csv", row.names = FALSE)
 ```
