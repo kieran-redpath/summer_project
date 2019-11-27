@@ -189,6 +189,7 @@ auc_match <- match(commonSamples, names(dasatinib_auc))
 # Interpret this 
 head(auc_match)
 # Figure out which expDat observations are within commonSamples (match)
+##################### There's a small chance that this is wrong, but I don't think so (colnames, not names)
 expDat_match <- match(commonSamples, colnames(expDat))
 head(expDat_match)
 
@@ -312,7 +313,7 @@ ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Mutations, y=IC50, fill=CDH1_
 
 
 
-```{r Add CDH1 Expression Data, and plot it on the boxplot- Real Version}
+```{r Add CDH1 Expression Data, to plot it on the boxplot later}
 # Attempt to create a data frame that just has data for CDH1 (Ensembl: ENSG00000039068.14), but across every cell line
 CDH1_Exp_Levels <- subset(expDat_sort, rownames(expDat_sort)=="ENSG00000039068.14")
 #Reorient "CDH1_Exp_Levels" so it has the same orientation as "CCLE_dasat_BCCCGC"

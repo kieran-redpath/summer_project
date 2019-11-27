@@ -62,13 +62,13 @@ write.csv(CCLE_dasat_CDH1,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE
 # CCLE_dasat_CDH1 <- read.csv("~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE_dasat_CDH1.csv")
 # AUC ggplot (with CDH1 expression levels)
 ggplot(data=CCLE_dasat_CDH1, mapping=aes(x=CDH1_Expression_Levels, y=AUC, fill=CDH1_Expression_Levels)) +
-  labs(x= "Level of CDH1 Expression", y="AUC", caption="(Data from GDSC and CCLE)") +
+  labs(x= "Level of CDH1 Expression (High= top 60%, Low= bottom 40%)", y="AUC", caption="(Data from GDSC and CCLE)") +
   ggtitle("Dasatinib Data", subtitle="AUC vs Level of CDH1 Expression") +
   geom_boxplot() +
   geom_beeswarm()
 # IC50 ggplot (with CDH1 expression levels)
 ggplot(data=CCLE_dasat_CDH1, mapping =aes(x=CDH1_Expression_Levels, y=IC50, fill=CDH1_Expression_Levels)) +
-  labs(x= "Level of CDH1 Expression",y="IC50", caption="(Data from GDSC and CCLE)") +
+  labs(x= "Level of CDH1 Expression (High= top 60%, Low= bottom 40%)",y="IC50", caption="(Data from GDSC and CCLE)") +
   ggtitle("Dasatinib Data", subtitle="IC50 vs Level of CDH1 Expresion") +
   geom_boxplot() +
   geom_beeswarm()
@@ -79,7 +79,7 @@ ggplot(data=CCLE_dasat_CDH1, mapping =aes(x=CDH1_Expression_Levels, y=IC50, fill
 
 ```{r Plot Expression vs. Mutation Status, to Try Find out Where the Problem Lies}
 ggplot(data=CCLE_dasat_CDH1, mapping=aes(x=CDH1_Mutations, y=Normalised_CDH1_Expression, fill=CDH1_Mutations)) +
-  labs(x= "Number of CDH1 Mutations", y="Normalised CDH1 Expression", caption="(Data from GDSC and CCLE)") +
+  labs(x= "Number of CDH1 Mutations", y="Normalised CDH1 Expression (logCPM)", caption="(Data from GDSC and CCLE)") +
   ggtitle("CDH1 Data", subtitle="Normalised CDH1 Expression vs Number of CDH1 Mutations") +
   geom_boxplot() +
   geom_beeswarm()

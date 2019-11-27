@@ -658,6 +658,7 @@ head(auc_match)
 
 ``` r
 # Figure out which expDat observations are within commonSamples (match)
+##################### There's a small chance that this is wrong, but I don't think so (colnames, not names)
 expDat_match <- match(commonSamples, colnames(expDat))
 head(expDat_match)
 ```
@@ -1345,7 +1346,7 @@ setDT(CDH1_Exp_Levels, keep.rownames = "CCLE_Name")[]
     ## 621:                               ZR7530_BREAST          4.0726827
 
 ``` r
-# Filter so lowest 20% is "Low", top 80% is "High" (can replace values later on)
+# Filter so lowest 40% is "Low", top 80% is "High" (can replace values later on)
 CDH1_Exp_Levels$CDH1_Expression <- ifelse(CDH1_Exp_Levels$ENSG00000039068.14 < quantile(CDH1_Exp_Levels$ENSG00000039068.14, 0.4), "Low","High")
 ```
 
