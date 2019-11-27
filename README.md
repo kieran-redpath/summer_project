@@ -1,2 +1,2 @@
 # summer_project
-Some required files are too large to be in this directory
+Current working version is the one with the most recent date in its title
