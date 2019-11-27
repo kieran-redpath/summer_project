@@ -32,26 +32,42 @@ View(CDH1_Exp_Levels)
 
 #27_11_19
 
-```{r }
-####*Up to Here*#### 
-# Create a subset of "CDH1_Exp_Levels", icnluding only those that match "CCLE_dasat_CCBCGC" Note that "CCLE_dasat_BCCCGC" has 202 entries, but we only have CDH1 expression data from 142 of these (those in "Boxplot_data_2")
-Boxplot_data_2 <-  setDT(CDH1_Exp_Levels)[CCLE_Name %chin% CCLE_dasat_BCCCGC$CCLE_Name]
-View(Boxplot_data_2)
+```{r Create a Really Good Table, with all the data in it}
+# Remove the unneccesary "CDH1_Expression" column from "CCLE_dasat_BCCCGC"
+CCLE_dasat_BCCCGC <- subset(CCLE_dasat_BCCCGC, select= -c(CDH1_Expression))
+View(CCLE_dasat_BCCCGC)
+# Merge "CCLE_dasat_BCCCGC" and "CDH1_Exp_Levels", to add expression data to "CCLE_dasat_BCCCGC"
+CCLE_dasat_CDH1 = full_join(x=CCLE_dasat_BCCCGC, y=CDH1_Exp_Levels,  by=c("CCLE_Name" = "CCLE_Name"))
+CCLE_dasat_CDH1 <- CCLE_dasat_CDH1 %>%
+  filter(`Primary.Disease`=="Gastric Cancer"|`Primary.Disease`=="Breast Cancer" |`Primary.Disease`=="Colon Cancer")
+View(CCLE_dasat_CDH1)
+# Note that "CCLE_dasat_BCCCGC" has 202 entries, but we only have CDH1 expression data from ~108 of these (however, all drug treated samples are within this).
+#Tidy up column names a bit
+CCLE_dasat_CDH1 <- CCLE_dasat_CDH1 %>% 
+  rename(
+    Normalised_CDH1_Expression = ENSG00000039068.14,
+    CDH1_Expression_Levels = CDH1_Expression,
+    Sanger_ID = Sanger.ID,
+    Primary_Disease = Primary.Disease,
+    Subtype_Disease = Subtype.Disease
+    )
+View(CCLE_dasat_CDH1)
+# Save the file as a .csv
+write.csv(CCLE_dasat_CDH1,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE_dasat_CDH1.csv", row.names = FALSE)
+```
 
-Boxplot_data_2 <- match( CCLE_dasat_BCCCGC$CCLE_Name, CDH1_Exp_Levels$CCLE_Name)
-CCLE_dasat_BCCCGC$CDH1_Expression[Boxplot_data_2] <- 
-####################
 
+```{r Plot AUC/IC50 vs. CDH1 Expression Levels}
 # AUC ggplot (with CDH1 expression levels)
-ggplot(data=CCLE_dasat_BCCCGC, mapping=aes(x=CDH1_Expression, y=AUC, fill=CDH1_Expression)) +
-  labs(x= "Level of CDH1 Expression", y="IC50", caption="(Data from GDSC and CCLE)") +
-  ggtitle("Dasatinib Data", subtitle="IC50 vs Numer of CDH1 Mutations") +
+ggplot(data=CCLE_dasat_CDH1, mapping=aes(x=CDH1_Expression_Levels, y=AUC, fill=CDH1_Expression_Levels)) +
+  labs(x= "Level of CDH1 Expression", y="AUC", caption="(Data from GDSC and CCLE)") +
+  ggtitle("Dasatinib Data", subtitle="AUC vs Level of CDH1 Expression") +
   geom_boxplot() +
   geom_beeswarm()
 # IC50 ggplot (with CDH1 expression levels)
-ggplot(data=CCLE_dasat_BCCCGC, mapping =aes(x=CDH1_Expression, y=IC50, fill=CDH1_Expression)) +
+ggplot(data=CCLE_dasat_CDH1, mapping =aes(x=CDH1_Expression_Levels, y=IC50, fill=CDH1_Expression_Levels)) +
   labs(x= "Level of CDH1 Expression",y="IC50", caption="(Data from GDSC and CCLE)") +
-  ggtitle("Dasatinib Data", subtitle="IC50 vs Number of CDH1 Mutations") +
+  ggtitle("Dasatinib Data", subtitle="IC50 vs Level of CDH1 Expresion") +
   geom_boxplot() +
   geom_beeswarm()
 ```
