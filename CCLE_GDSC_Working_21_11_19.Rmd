@@ -34,8 +34,6 @@ GDSC_AUC.csv: AUC data for GDSC cell lines, treated with a bunch of different dr
 
 GDSC_IC50.csv: IC50 data for GDSC cell lines, treated with a bunch of different drugs
 
-# ✓ denotes chunks that should definitely work fine and aren't broken
-
 # 18_11_19
 ```{r Load Packages}
 setwd("~/Documents/R Data/summer_project")

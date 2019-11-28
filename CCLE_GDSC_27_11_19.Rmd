@@ -25,9 +25,7 @@ library(ggbeeswarm)
 
 ```{r Load Documents}
 CCLE_dasat_BCCCGC <- read.csv("CCLE_GDSC/Data/CCLE_dasat_BCCCGC.csv")
-View(CCLE_dasat_BCCCGC)
 CDH1_Exp_Levels <- read.csv("CCLE_GDSC/Data/CDH1_Exp_Levels.csv")
-View(CDH1_Exp_Levels)
 ```
 
 #27_11_19
@@ -35,12 +33,10 @@ View(CDH1_Exp_Levels)
 ```{r Create a Really Good Table, With All the Data in it}
 # Remove the unneccesary "CDH1_Expression" column from "CCLE_dasat_BCCCGC"
 CCLE_dasat_BCCCGC <- subset(CCLE_dasat_BCCCGC, select= -c(CDH1_Expression))
-View(CCLE_dasat_BCCCGC)
 # Merge "CCLE_dasat_BCCCGC" and "CDH1_Exp_Levels", to add expression data to "CCLE_dasat_BCCCGC"
 CCLE_dasat_CDH1 = full_join(x=CCLE_dasat_BCCCGC, y=CDH1_Exp_Levels,  by=c("CCLE_Name" = "CCLE_Name"))
 CCLE_dasat_CDH1 <- CCLE_dasat_CDH1 %>%
   filter(`Primary.Disease`=="Gastric Cancer"|`Primary.Disease`=="Breast Cancer" |`Primary.Disease`=="Colon Cancer")
-View(CCLE_dasat_CDH1)
 # Note that "CCLE_dasat_BCCCGC" has 202 entries, but we only have CDH1 expression data from ~108 of these (however, all drug treated samples are within this).
 #Tidy up column names a bit
 CCLE_dasat_CDH1 <- CCLE_dasat_CDH1 %>% 
@@ -86,6 +82,141 @@ ggplot(data=CCLE_dasat_CDH1, mapping=aes(x=CDH1_Mutations, y=Normalised_CDH1_Exp
 #Hmmmmm... This still doesn't look good, does it?
 ```
 
+# 28_11_19
+
+## Look at the other dataset
+```{r Load the GDSC data}
+# Original Set
+gdsc_auc <- read.csv('CCLE_GDSC/Data/GDSC_AUC.csv', sep=',')
+gdsc_ic50 <- read.csv('CCLE_GDSC/Data/GDSC_IC50.csv', sep=',')
+dim(gdsc_auc)
+dim(gdsc_ic50)
+gdsc_auc[1:5,1:5]
+gdsc_ic50[1:5,1:5]
+
+#GDSC Drug Codes
+drugCodes <- read.csv('CCLE_GDSC/Data/gdsc_codes_1.csv', sep= ',')
+head(drugCodes)
+
+#Other Data we Need Later (so process it now)
+depMapCCLEmut <- fread('CCLE_GDSC/Data/CCLE_mutations.csv', sep=',')
+depMapCCLElines <- fread('CCLE_GDSC/Data/DepMap-2018q3-celllines.csv', sep=',')
+bc <- depMapCCLEmut$Tumor_Sample_Barcode
+mt <- match(bc, depMapCCLElines$Broad_ID)
+dis <- depMapCCLElines$`Primary Disease`[mt]
+gn <- depMapCCLEmut$Hugo_Symbol
+which(gn == "CDH1") %>% dis[.] %>% table() %>% sort(., decreasing=TRUE) 
+diseases = c("Colon Cancer", "Gastric Cancer", "Breast Cancer")
+kp <- bc[which(gn == "CDH1" & dis %in% diseases)]
+kk <- bc[which(gn != "CDH1" & dis %in% diseases)]
+col_order_cdh1 <- c("CCLE_Name","Broad_ID","Aliases","COSMIC_ID","Sanger ID","Primary Disease","Subtype Disease","Gender","Source")
+
+cdh1Lines <- depMapCCLElines %>% dplyr::filter(., Broad_ID %in% kp)
+cdh1Lines %>% 
+  dplyr::arrange(., `Primary Disease`)
+cdh1Lines <- cdh1Lines[, col_order_cdh1]
+Noncdh1Lines <- depMapCCLElines %>% dplyr::filter(., Broad_ID %in% kk)
+Noncdh1Lines %>% 
+  dplyr::arrange(., `Primary Disease`)
+Noncdh1Lines <- cdh1Lines[, col_order_cdh1]
+
+ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
+logExpDat <- log(ccleExpData + 0.5)
+dge <- DGEList(counts=ccleExpData)
+dge <- calcNormFactors(dge)
+v <- voom(dge, plot=TRUE)
+expDat <- v$E
+```
 
 
-Also do expression vs mutation status (I.e does expression level correlate with mutation)
+
+```{r Process GDSC2}
+# Load GDSC2 Data
+GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
+dim(GDSC2)
+# Extract Dasatinib Data
+dasatinib <- GDSC2 %>% filter(., DRUG_NAME=="Dasatinib")
+# Fix the names of the expDat columns, so they're just cell line identifiers instead of full names
+expDatsplit <- strsplit(colnames(expDat), "_") %>% 
+  lapply(., function(x) x[1]) %>% 
+  unlist()
+colnames(expDat) <- expDatsplit
+View(expDat)
+# Match "dasatinib$CELL_LINE_NAME" formatting to expDat names
+dasatinib$CELL_LINE_NAME <- gsub("-","",dasatinib$CELL_LINE_NAME, fixed=TRUE)
+# Now keep sorting
+commonSamples <- intersect(dasatinib$CELL_LINE_NAME,colnames(expDat))
+# A better way to do it would be: dasatinib_sort <- dasatinib %>% filter(CELL_LINE_NAME %in% commonSamples)
+expDat_match <- match(commonSamples, colnames(expDat))
+expDat_sort <- expDat[ , na.omit(expDat_match)]
+dasatinib_match <- match(commonSamples, dasatinib$CELL_LINE_NAME)
+dasatinib_sort <- dasatinib[na.omit(dasatinib_match),]
+```
+
+
+
+```{r}
+# Wrangle CCLE Info for CDH1
+CDH1_Exp_Levels <- subset(expDat_sort, rownames(expDat_sort)=="ENSG00000039068.14")
+#Reorient "CDH1_Exp_Levels" so it has the same orientation as "CCLE_dasat_BCCCGC"
+CDH1_Exp_Levels <- t(CDH1_Exp_Levels)
+# Move row names into the first column, and name it "CCLE_Name"
+CDH1_Exp_Levels <- as.data.frame(CDH1_Exp_Levels)
+setDT(CDH1_Exp_Levels, keep.rownames = "CCLE_Name")[]
+View(CDH1_Exp_Levels)
+# Filter to define "High" and "Low"
+CDH1_Exp_Levels$CDH1_Expression <- ifelse(CDH1_Exp_Levels$ENSG00000039068.14 < quantile(CDH1_Exp_Levels$ENSG00000039068.14, 0.4), "Low","High")
+# Merge with dasatinib sort
+dasatinib_sort <- dasatinib_sort %>% 
+  rename(
+    CCLE_Name = CELL_LINE_NAME
+    )
+dasatinib_CDH1 = full_join(x=dasatinib_sort, y=CDH1_Exp_Levels,  by=c("CCLE_Name" = "CCLE_Name"))
+View(dasatinib_CDH1)
+```
+
+
+
+```{r Create Some Plots}
+# Plot everything
+ggplot(data=dasatinib_CDH1, mapping=aes(x=CDH1_Expression, y=AUC, fill=CDH1_Expression)) +
+  labs(x= "Level of CDH1 Expression (High= top 60%, Low= bottom 40%)", y="AUC", caption="(Data from GDSC2 and CCLE)") +
+  ggtitle("Dasatinib Data (all tissues)", subtitle="AUC vs Level of CDH1 Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
+
+ggplot(data=dasatinib_CDH1, mapping=aes(x=CDH1_Expression, y=LN_IC50, fill=CDH1_Expression)) +
+  labs(x= "Level of CDH1 Expression (High= top 60%, Low= bottom 40%)", y="ln IC50", caption="(Data from GDSC2 and CCLE)") +
+  ggtitle("Dasatinib Data (all tissues)", subtitle="ln IC50 vs Level of CDH1 Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
+```
+
+
+
+```{r Plot 3 Tissues}
+# Look at just the three main tissues
+dasatinib_CDH1_3 <- dasatinib_CDH1 %>%
+  filter(`TCGA_DESC`=="STAD"|`TCGA_DESC`=="BRCA" |`TCGA_DESC`=="COREAD")
+View(dasatinib_CDH1_3)
+# Plot these
+ggplot(data=dasatinib_CDH1_3, mapping=aes(x=CDH1_Expression, y=AUC, fill=CDH1_Expression)) +
+  labs(x= "Level of CDH1 Expression (High= top 60%, Low= bottom 40%)", y="AUC", caption="(Data from GDSC2 and CCLE)") +
+  ggtitle("Dasatinib Data (all tissues)", subtitle="AUC vs Level of CDH1 Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
+
+ggplot(data=dasatinib_CDH1_3, mapping=aes(x=CDH1_Expression, y=LN_IC50, fill=CDH1_Expression)) +
+  labs(x= "Level of CDH1 Expression (High= top 60%, Low= bottom 40%)", y="ln IC50", caption="(Data from GDSC2 and CCLE)") +
+  ggtitle("Dasatinib Data (all tissues)", subtitle="ln IC50 vs Level of CDH1 Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
+```
+
+limma differential expression analysis (lecture 3)
+look at high and low ic50 groups, and then find out which genes are differentially expressed between the two groups
+data frame with all the samples that have dasatinib data, and all the genes. These will have high/low ic50 associated with them (50/50 split)
+Will show you which genes are involved in dasatinib sensitivity
+fit model with lmfit and ebayes, gives you a table with p values, showing significance of differential expression
+volcano plot tells you how big and significant the difference is, stuff that comes out the top will be the most important
+Pathway analysis to see what it's actually changing
