@@ -1,0 +1,184 @@
+---
+title: "dasatinib_dif_exp_analysis_29_11_19"
+author: "Kieran Redpath"
+date: "29 November 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+limma differential expression analysis (lecture 3)
+look at high and low ic50 groups, and then find out which genes are differentially expressed between the two groups
+data frame with all the samples that have dasatinib data, and all the genes. These will have high/low ic50 associated with them (50/50 split)
+Will show you which genes are involved in dasatinib sensitivity
+fit model with lmfit and ebayes, gives you a table with p values, showing significance of differential expression
+volcano plot tells you how big and significant the difference is, stuff that comes out the top will be the most important
+Pathway analysis to see what it's actually changing
+
+```{r Load packages}
+library(limma)
+library(edgeR)
+library(data.table)
+library(magrittr)
+library(ggplot2)
+library(CePa)
+library(dplyr)
+library(tidyverse)
+library(ggbeeswarm)
+library(org.Hs.eg.db)
+```
+
+
+
+```{r Create the first big file to use. Not neccessarily important}
+#expDat Processing
+ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
+logExpDat <- log(ccleExpData + 0.5)
+dge <- DGEList(counts=ccleExpData)
+dge <- calcNormFactors(dge)
+v <- voom(dge, plot=TRUE)
+expDat <- v$E
+
+# GDSC2 Processing (from old document)
+GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
+dim(GDSC2)
+dasatinib <- GDSC2 %>% filter(., DRUG_NAME=="Dasatinib")
+expDatsplit <- strsplit(colnames(expDat), "_") %>% 
+  lapply(., function(x) x[1]) %>% 
+  unlist()
+colnames(expDat) <- expDatsplit
+dasatinib$CELL_LINE_NAME <- gsub("-","",dasatinib$CELL_LINE_NAME, fixed=TRUE)
+commonSamples <- intersect(dasatinib$CELL_LINE_NAME,colnames(expDat))
+expDat_match <- match(commonSamples, colnames(expDat))
+expDat_sort <- expDat[ , na.omit(expDat_match)]
+dasatinib_match <- match(commonSamples, dasatinib$CELL_LINE_NAME)
+dasatinib_sort <- dasatinib[na.omit(dasatinib_match),]
+colnames(dasatinib_sort)[5] <- "CCLE_Name"
+dasatinib_sort$AUC_Level <- ifelse(dasatinib_sort$AUC < quantile(dasatinib_sort$AUC, 0.5, na.rm=TRUE), "Low","High")
+# expDat Processing
+expDat_all <- t(expDat_sort)
+expDat_all <- as.data.frame(expDat_all)
+setDT(expDat_all, keep.rownames = "CCLE_Name")[]
+# "dasatinib_sort" can now be combined with "expDat_sort"
+dasatinib_all = full_join(x=dasatinib_sort, y= expDat_all, by=c("CCLE_Name" = "CCLE_Name"))
+head(dasatinib_all)
+```
+
+```{r Differential Expression Analysis With IC50}
+# Check all this stuff
+dim(expDat_sort)
+dim(dasatinib_sort)
+head(expDat_sort)[,1:5]
+head(dasatinib_sort)[,1:5]
+sum(colnames(expDat_sort)==dasatinib_sort$CCLE_Name)
+names(dasatinib_sort)
+
+# lmFit
+group <- ifelse(dasatinib_sort$LN_IC50 > median(dasatinib_sort$LN_IC50), "High", "Low")
+table(group)
+boxplot(dasatinib_sort$LN_IC50 ~ group)
+design = model.matrix(~group);
+design %>% head()
+colnames(design) = c("Mean"
+,"HighVsLow"
+)
+
+# Fit the data to the model
+fit = lmFit(expDat_sort, design)
+fit = eBayes(fit)
+tt = topTable(fit, coef="HighVsLow", adjust="BH",n=nrow(expDat_sort))
+options(digits=4)
+tt[1:20,]
+# Take a quick look at the first gene for the hell of it
+plot(density(expDat_sort[,1]))
+
+# Count number of significant genes
+sum(tt$adj.P.Val<0.01)
+
+## Plot log fold-change _versus_ -log(P-value). This graph is the important one, things up the top and spread out are useful associations
+## (i.e., higher number = lower p-value):
+volcanoplot(fit, coef="HighVsLow")
+
+split <- strsplit(rownames(tt),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
+geneNames <- select(org.Hs.eg.db, keys = split, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
+head(split)
+
+# What does the top table look like?
+dim(tt)
+tt$symbol <- geneNames$SYMBOL[match(split, geneNames$ENSEMBL)]
+
+# Check the data: Output shows that some ENSEMBL ID's have multiple regular gene names
+length(split)
+dim(geneNames)
+
+# Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
+cat(na.omit(tt$symbol[1:300]),sep="\n")
+# Create a histogram of IC50 values to visualise them
+hist(dasatinib_sort$LN_IC50,50)
+# Take a quick look at the median, just out of interest
+median(dasatinib_sort$LN_IC50)
+```
+
+```{r Differential Expression Analysis With AUC}
+# Check all this stuff
+dim(expDat_sort)
+dim(dasatinib_sort)
+head(expDat_sort)[,1:5]
+head(dasatinib_sort)[,1:5]
+sum(colnames(expDat_sort)==dasatinib_sort$CCLE_Name)
+names(dasatinib_sort)
+
+# lmFit
+group2 <- ifelse(dasatinib_sort$AUC > median(dasatinib_sort$AUC), "High", "Low")
+table(group2)
+boxplot(dasatinib_sort$AUC ~ group2)
+design2 = model.matrix(~group2);
+design2 %>% head()
+colnames(design2) = c("Mean"
+,"HighVsLow"
+)
+# Fit the data to the model
+fit2 = lmFit(expDat_sort, design2)
+fit2 = eBayes(fit2)
+tt2 = topTable(fit2, coef="HighVsLow", adjust="BH",n=nrow(expDat_sort))
+options(digits=4)
+tt2[1:20,]
+# Take a quick look at the first gene for the hell of it
+plot(density(expDat_sort[,1]))
+
+# Count number of significant genes
+sum(tt2$adj.P.Val<0.01)
+
+## Plot log fold-change _versus_ -log(P-value). This graph is the important one, things up the top and spread out are useful associations
+## (i.e., higher number = lower p-value):
+volcanoplot(fit2, coef="HighVsLow")
+
+split2 <- strsplit(rownames(tt2),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
+geneNames2 <- select(org.Hs.eg.db, keys = split2, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
+head(split2)
+
+# What does the top table look like?
+dim(tt2)
+tt2$symbol <- geneNames2$SYMBOL[match(split2, geneNames2$ENSEMBL)]
+
+# Check the data: Output shows that some ENSEMBL ID's have multiple regular gene names
+length(split2)
+dim(geneNames2)
+
+# Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
+cat(na.omit(tt2$symbol[1:300]),sep="\n")
+# Create a histogram of AUC values to visualise them
+hist(dasatinib_sort$AUC,50)
+# Take a quick look at the median, just out of interest
+median(dasatinib_sort$AUC)
+```
+
+
+
+Do it for AUC
+get list of significant genes in AUC and IC50
+find overlap. Make sure the direction is right, as high AUC and low IC50 are good.
+
+
