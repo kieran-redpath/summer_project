@@ -448,7 +448,7 @@ dim(geneNames)
 
 ``` r
 # Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
-cat(na.omit(tt$symbol[1:300]),sep="\n")
+cat(na.omit(tt$symbol[1:50]),sep="\n")
 ```
 
     ## LOC100506178
@@ -482,167 +482,6 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## C5orf15
     ## NIPSNAP3B
     ## EFCC1
-    ## SMARCD2
-    ## USP44
-    ## WASL
-    ## CAPZA2
-    ## ARHGEF33
-    ## MCAM
-    ## CTDSP1
-    ## L3MBTL1
-    ## ZNF605
-    ## ABHD11-AS1
-    ## LAMB1
-    ## SGTB
-    ## HHIP-AS1
-    ## MFAP5
-    ## HS1BP3
-    ## ZBTB7A
-    ## ZFHX4-AS1
-    ## SPR
-    ## TOX
-    ## BTN2A2
-    ## NDUFA5
-    ## TJAP1
-    ## NPAS2
-    ## SMC2-AS1
-    ## SBDS
-    ## KLHL15
-    ## SMAD9
-    ## FIS1
-    ## CEP192
-    ## SHB
-    ## PTOV1-AS1
-    ## SPARC
-    ## LOC101928963
-    ## ZKSCAN1
-    ## LRRC39
-    ## ABHD11
-    ## ADAMTS6
-    ## TTK
-    ## COL5A2
-    ## RNF175
-    ## LTBP2
-    ## AKT3
-    ## RAB11A
-    ## KCNE5
-    ## CYP26C1
-    ## LOC285638
-    ## CYP27C1
-    ## COQ9
-    ## DAPK1
-    ## CAVIN1
-    ## RNPEPL1
-    ## FAM102A
-    ## CNDP1
-    ## GPD1L
-    ## PRSS53
-    ## EAF1
-    ## C7orf43
-    ## DUS1L
-    ## KHDC1L
-    ## BCL11A
-    ## AAGAB
-    ## NAT1
-    ## SETD3
-    ## NPPB
-    ## NEK6
-    ## CHST3
-    ## KIF7
-    ## NDC80
-    ## TACO1
-    ## TMEM135
-    ## RASAL2
-    ## GRK2
-    ## SLC26A2
-    ## PDLIM4
-    ## CRIM1
-    ## CHRDL1
-    ## TSPAN19
-    ## IGFBP7
-    ## PPT2
-    ## RAB7A
-    ## SFTA1P
-    ## TRIM53AP
-    ## LDHD
-    ## LINC02225
-    ## CCHCR1
-    ## DCXR
-    ## LAMA4
-    ## CEACAM21
-    ## TRAF3IP2-AS1
-    ## EFEMP2
-    ## CACNA2D4
-    ## BLOC1S4
-    ## LNCOC1
-    ## KIAA0232
-    ## EMC1
-    ## HMGN3
-    ## XPO5
-    ## TPST1
-    ## DNAJC18
-    ## TLN1
-    ## STN1
-    ## OLFM3
-    ## UFSP1
-    ## ZNF345
-    ## FNDC5
-    ## RABL3
-    ## TINF2
-    ## ATP6V1F
-    ## DBI
-    ## SCRN3
-    ## AXL
-    ## COL4A6
-    ## NECAP1
-    ## GNB2
-    ## RAB22A
-    ## FKBP4
-    ## GADD45G
-    ## DGKD
-    ## MIR100HG
-    ## ATP5MC3
-    ## SERF2
-    ## ANKRD33B
-    ## IL6
-    ## FAM122A
-    ## ASXL1
-    ## LINC01619
-    ## PPP1R14A
-    ## NEURL1
-    ## MLX
-    ## IQGAP2
-    ## KCNS1
-    ## GAK
-    ## NQO1
-    ## RREB1
-    ## TBC1D3P5
-    ## SRP14
-    ## SLC37A1
-    ## LOC100268168
-    ## CNTNAP1
-    ## TYMSOS
-    ## C15orf53
-    ## DNAH11
-    ## RGS4
-    ## TSC22D1
-    ## BOLA3-AS1
-    ## ART4
-    ## SMARCA1
-    ## CD40
-    ## JMJD7
-    ## CEP162
-    ## RASAL2-AS1
-    ## TMEM39B
-    ## AP1AR
-    ## CSF1
-    ## PREB
-    ## STX11
-    ## IFT80
-    ## CTRB1
-    ## IGFBPL1
-    ## DENND2A
-    ## RMND5B
 
 ``` r
 #Check log fold change
@@ -3029,7 +2868,11 @@ head(tt)
 #Find the top expression values. Shows that high expression correlates to high ic50, and V.V (e.g. this gene is protective against dasatinib)
 topExp <- expDat_final[match(tt$rn[1], rownames(expDat_final)),]
 df <- data.frame(topGene=topExp, ic50=group)
-ggplot(df, aes(x=ic50, y=topGene)) + geom_boxplot()
+ggplot(data=df, mapping=aes(x=ic50, y=topGene, fill=ic50)) +
+  labs(x="IC50 level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  ggtitle("IC50 Vs topGene Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
 ```
 
 ![](dasatinib_dif_exp_analysis_3_tissues_files/figure-gfm/Differential%20Expression%20Analysis%20With%20IC50-5.png)<!-- -->
@@ -3238,7 +3081,7 @@ dim(geneNames2)
 
 ``` r
 # Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
-cat(na.omit(tt2$symbol[1:300]),sep="\n")
+cat(na.omit(tt2$symbol[1:50]),sep="\n")
 ```
 
     ## KIF7
@@ -3277,175 +3120,6 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## KIAA1324
     ## IGFBP7
     ## SIDT1
-    ## ADAMTS6
-    ## CTDSP1
-    ## IMPDH1
-    ## LOC100129940
-    ## CD83
-    ## THUMPD3-AS1
-    ## CNDP1
-    ## SLC2A3
-    ## CMTM7
-    ## LAMA5
-    ## DNPEP
-    ## DTD2
-    ## AKT3
-    ## SEMA7A
-    ## LOC284454
-    ## NR2F2-AS1
-    ## DSE
-    ## SMC4
-    ## LINC01480
-    ## JUND
-    ## HSPG2
-    ## PER2
-    ## SLC37A1
-    ## SGK1
-    ## MMP24
-    ## CISH
-    ## TRIM53AP
-    ## LINC00518
-    ## LOC101929408
-    ## EFEMP2
-    ## CAV3
-    ## LINC01273
-    ## SFTA1P
-    ## CLHC1
-    ## HS2ST1
-    ## KCTD18
-    ## RAB6D
-    ## PVR
-    ## FAM98C
-    ## MIR17HG
-    ## RAB3A
-    ## GLIS2
-    ## RECQL
-    ## CACNB1
-    ## DBI
-    ## CCDC80
-    ## ARHGEF28
-    ## MYB
-    ## EFCC1
-    ## WNT10A
-    ## TXN2
-    ## PLAU
-    ## TIMP2
-    ## TBC1D16
-    ## ISOC1
-    ## ATP5F1B
-    ## SEC14L1
-    ## PYGL
-    ## GNA14
-    ## CCDC50
-    ## PHYHD1
-    ## NDUFS7
-    ## GSKIP
-    ## MELTF
-    ## SNORA33
-    ## MIR22HG
-    ## LOC100268168
-    ## STAM2
-    ## ESRRA
-    ## RMND5B
-    ## NABP1
-    ## SPOCK2
-    ## LOC101929759
-    ## SLC19A3
-    ## NR2F6
-    ## IBA57-DT
-    ## ABL2
-    ## LOC100507156
-    ## LOC105376805
-    ## ISLR2
-    ## LAMB1
-    ## SMAD1
-    ## ICAM3
-    ## BNIP1
-    ## ATG4D
-    ## ZNF660
-    ## MELTF-AS1
-    ## LINC01776
-    ## KIAA1755
-    ## MORF4L2-AS1
-    ## CPT2
-    ## CACTIN-AS1
-    ## ZNF514
-    ## INSYN2B
-    ## SDHAF1
-    ## CRIM1
-    ## YEATS2
-    ## MARCH4
-    ## GSR
-    ## SMAP2
-    ## TAGLN
-    ## DNASE2B
-    ## DNAJA3
-    ## SRD5A3
-    ## PLAG1
-    ## SEMA3D
-    ## MTX2
-    ## LONP1
-    ## ITGB2-AS1
-    ## CCDC115
-    ## SETD3
-    ## HSP90B1
-    ## NAT1
-    ## LAMC1-AS1
-    ## MRPS34
-    ## MARVELD1
-    ## ZSWIM5
-    ## BTBD19
-    ## LINC01128
-    ## RAB40A
-    ## SERPINH1
-    ## DCAF11
-    ## TPM2
-    ## SMPDL3A
-    ## GPR157
-    ## ALKBH5
-    ## CDK15
-    ## DEPTOR
-    ## UTAT33
-    ## ATP5MC3
-    ## SPAG8
-    ## ADCY10P1
-    ## STARD10
-    ## LOC105371795
-    ## MFGE8
-    ## TOGARAM2
-    ## CNN1
-    ## KRTAP10-1
-    ## TMEM268
-    ## LOXL4
-    ## FSCN1
-    ## SNORA4
-    ## TEKT5
-    ## PLXNA1
-    ## PLA2G2A
-    ## HMGA2
-    ## OLFML2A
-    ## BDNF
-    ## KRTAP2-3
-    ## GON7
-    ## GLIS3
-    ## PCNX4
-    ## SYT14
-    ## AHCYL2
-    ## BTN2A2
-    ## LOC100270804
-    ## SPR
-    ## CNNM4
-    ## REEP3
-    ## MFAP5
-    ## PEBP4
-    ## ENDOG
-    ## PPP1R7
-    ## ARHGAP28
-    ## PRNP
-    ## PSG10P
-    ## LOC283731
-    ## CLDN6
-    ## LINC02544
 
 ``` r
 # Create a histogram of AUC values to visualise them
@@ -3477,7 +3151,11 @@ head(tt2)
 #Find the top expression values. Shows that high expression correlates to low AUC, and V.V (e.g. this gene is protective against dasatinib)
 topExp2 <- expDat_final[match(tt2$rn[1], rownames(expDat_final)),]
 df2 <- data.frame(topGene=topExp2, AUC=group)
-ggplot(df2, aes(x=AUC, y=topGene)) + geom_boxplot()
+ggplot(data=df2, mapping=aes(x=AUC, y=topGene, fill=AUC)) +
+  labs(x="AUC level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  ggtitle("AUC Vs topGene Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
 ```
 
 ![](dasatinib_dif_exp_analysis_3_tissues_files/figure-gfm/Differential%20Expression%20Analysis%20With%20AUC-5.png)<!-- -->
@@ -3569,3 +3247,165 @@ ggplot(data=tt3, mapping=aes(x=AUC_logFC,y=Avg_Exp)) +geom_point()
 ```
 
 ![](dasatinib_dif_exp_analysis_3_tissues_files/figure-gfm/Plot%20gene%20expression%20vs%20AUC%20and%20gene%20expression%20vs%20IC50,%20on%20a%20scatter%20plot%20and%20boxplot-4.png)<!-- -->
+
+``` r
+Sig_Genes_IC50 <- cat(na.omit(tt$symbol[1:100]),sep="\n")
+```
+
+    ## LOC100506178
+    ## KHDC1
+    ## DSE
+    ## DLK2
+    ## EXTL2
+    ## PNMA8A
+    ## ARHGEF28
+    ## LINC01480
+    ## SNORA33
+    ## UNC13C
+    ## RHOU
+    ## ATG16L1
+    ## SPOCK2
+    ## CDK15
+    ## LAMC1
+    ## AVL9
+    ## EGFL8
+    ## ZNF655
+    ## PHTF1
+    ## CTF1
+    ## SCHIP1
+    ## ZNF660
+    ## HTR4
+    ## NUDT4B
+    ## CNN1
+    ## TBC1D16
+    ## KALRN
+    ## CD83
+    ## C5orf15
+    ## NIPSNAP3B
+    ## EFCC1
+    ## SMARCD2
+    ## USP44
+    ## WASL
+    ## CAPZA2
+    ## ARHGEF33
+    ## MCAM
+    ## CTDSP1
+    ## L3MBTL1
+    ## ZNF605
+    ## ABHD11-AS1
+    ## LAMB1
+    ## SGTB
+    ## HHIP-AS1
+    ## MFAP5
+    ## HS1BP3
+    ## ZBTB7A
+    ## ZFHX4-AS1
+    ## SPR
+    ## TOX
+    ## BTN2A2
+    ## NDUFA5
+    ## TJAP1
+    ## NPAS2
+    ## SMC2-AS1
+    ## SBDS
+    ## KLHL15
+    ## SMAD9
+    ## FIS1
+    ## CEP192
+    ## SHB
+    ## PTOV1-AS1
+    ## SPARC
+    ## LOC101928963
+    ## ZKSCAN1
+    ## LRRC39
+    ## ABHD11
+    ## ADAMTS6
+    ## TTK
+
+``` r
+Sig_Genes_IC50 <- as.vector(Sig_Genes_IC50)
+Sig_Genes_AUC <- cat(na.omit(tt2$symbol[1:100]),sep="\n")
+```
+
+    ## KIF7
+    ## AXL
+    ## TCEAL9
+    ## RNF187
+    ## IGFBP6
+    ## CAVIN1
+    ## HHIP-AS1
+    ## GPD1L
+    ## COQ9
+    ## CEP295NL
+    ## LOC100506178
+    ## ANKRD1
+    ## RREB1
+    ## TMEM43
+    ## TGM2
+    ## LIMS2
+    ## CTF1
+    ## L3MBTL1
+    ## SMURF2
+    ## COL9A3
+    ## GRK2
+    ## SCHIP1
+    ## NDUFA5
+    ## NPPB
+    ## SLC35G2
+    ## LAMC1
+    ## ZDHHC2
+    ## IFT80
+    ## ASXL1
+    ## ITGB1
+    ## MCAM
+    ## PDIK1L
+    ## LINC01140
+    ## KIAA1324
+    ## IGFBP7
+    ## SIDT1
+    ## ADAMTS6
+    ## CTDSP1
+    ## IMPDH1
+    ## LOC100129940
+    ## CD83
+    ## THUMPD3-AS1
+    ## CNDP1
+    ## SLC2A3
+    ## CMTM7
+    ## LAMA5
+    ## DNPEP
+    ## DTD2
+    ## AKT3
+    ## SEMA7A
+    ## LOC284454
+    ## NR2F2-AS1
+    ## DSE
+    ## SMC4
+    ## LINC01480
+    ## JUND
+    ## HSPG2
+    ## PER2
+    ## SLC37A1
+    ## SGK1
+    ## MMP24
+    ## CISH
+    ## TRIM53AP
+    ## LINC00518
+    ## LOC101929408
+    ## EFEMP2
+    ## CAV3
+    ## LINC01273
+    ## SFTA1P
+    ## CLHC1
+    ## HS2ST1
+    ## KCTD18
+    ## RAB6D
+    ## PVR
+    ## FAM98C
+    ## MIR17HG
+
+``` r
+Sig_Genes_AUC <- as.vector(Sig_Genes_AUC)
+
+Sig_Genes <- intersect(Sig_Genes_IC50, Sig_Genes_AUC)
+```

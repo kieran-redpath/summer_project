@@ -116,7 +116,7 @@ length(split)
 dim(geneNames)
 
 # Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
-cat(na.omit(tt$symbol[1:300]),sep="\n")
+cat(na.omit(tt$symbol[1:50]),sep="\n")
 #Check log fold change
 sign(tt$logFC)
 # Create a histogram of IC50 values to visualise them
@@ -128,7 +128,11 @@ head(tt)
 #Find the top expression values. Shows that high expression correlates to high ic50, and V.V (e.g. this gene is protective against dasatinib)
 topExp <- expDat_final[match(tt$rn[1], rownames(expDat_final)),]
 df <- data.frame(topGene=topExp, ic50=group)
-ggplot(df, aes(x=ic50, y=topGene)) + geom_boxplot()
+ggplot(data=df, mapping=aes(x=ic50, y=topGene, fill=ic50)) +
+  labs(x="IC50 level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  ggtitle("IC50 Vs topGene Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
 ```
 
 
@@ -181,7 +185,7 @@ length(split2)
 dim(geneNames2)
 
 # Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
-cat(na.omit(tt2$symbol[1:300]),sep="\n")
+cat(na.omit(tt2$symbol[1:50]),sep="\n")
 # Create a histogram of AUC values to visualise them
 hist(dasatinib_filter$AUC,50)
 # Take a quick look at the median, just out of interest
@@ -191,7 +195,11 @@ head(tt2)
 #Find the top expression values. Shows that high expression correlates to low AUC, and V.V (e.g. this gene is protective against dasatinib)
 topExp2 <- expDat_final[match(tt2$rn[1], rownames(expDat_final)),]
 df2 <- data.frame(topGene=topExp2, AUC=group)
-ggplot(df2, aes(x=AUC, y=topGene)) + geom_boxplot()
+ggplot(data=df2, mapping=aes(x=AUC, y=topGene, fill=AUC)) +
+  labs(x="AUC level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  ggtitle("AUC Vs topGene Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
 ```
 
 
@@ -240,3 +248,15 @@ ggplot(data=tt3, mapping=aes(x=AUC_Sign,y=Avg_Exp, group=AUC_Sign, fill=AUC_Sign
 # Scatter plot
 ggplot(data=tt3, mapping=aes(x=AUC_logFC,y=Avg_Exp)) +geom_point()
 ```
+
+
+```{r Find genes that appear significant for IC50 and AUC}
+Sig_Genes_IC50 <- cat(na.omit(tt$symbol[1:100]),sep="\n")
+Sig_Genes_IC50 <- as.vector(Sig_Genes_IC50)
+Sig_Genes_AUC <- cat(na.omit(tt2$symbol[1:100]),sep="\n")
+Sig_Genes_AUC <- as.vector(Sig_Genes_AUC)
+
+Sig_Genes <- intersect(Sig_Genes_IC50, Sig_Genes_AUC)
+```
+
+
