@@ -34,7 +34,7 @@ library(org.Hs.eg.db)
 
 
 
-```{r Create the first big file to use. Not neccessarily important}
+```{r Create the first big file to use}
 #expDat Processing
 ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 logExpDat <- log(ccleExpData + 0.5)

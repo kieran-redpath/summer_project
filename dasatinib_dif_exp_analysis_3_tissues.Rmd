@@ -26,7 +26,7 @@ library(org.Hs.eg.db)
 
 
 
-```{r Create the first big file to use. Not neccessarily important}
+```{r Create the first big file to use}
 #expDat Processing
 ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 logExpDat <- log(ccleExpData + 0.5)
@@ -60,21 +60,27 @@ dasatinib_all = full_join(x=dasatinib_sort, y= expDat_all, by=c("CCLE_Name" = "C
 head(dasatinib_all)
 ```
 
-
+```{r Make a nice clean version of "dasatinib_sort" that only has BC,CC,GC info}
+View(dasatinib_sort)
+dasatinib_filter <- filter(dasatinib_sort, TCGA_DESC == "COREAD" | TCGA_DESC == "BRCA" | TCGA_DESC == "STAD")
+View(dasatinib_filter)
+expDat_filter <- match(dasatinib_filter$CCLE_Name, colnames(expDat_sort))
+expDat_final <- expDat_sort[,expDat_filter]
+```
 
 ```{r Differential Expression Analysis With IC50}
 # Check all this stuff
-dim(expDat_sort)
-dim(dasatinib_sort)
-head(expDat_sort)[,1:5]
-head(dasatinib_sort)[,1:5]
-sum(colnames(expDat_sort)==dasatinib_sort$CCLE_Name)
-names(dasatinib_sort)
+dim(expDat_final)
+dim(dasatinib_filter)
+head(expDat_final)[,1:5]
+head(dasatinib_filter)[,1:5]
+sum(colnames(expDat_final)==dasatinib_filter$CCLE_Name)
+names(dasatinib_filter)
 
 # lmFit
-group <- ifelse(dasatinib_sort$LN_IC50 > median(dasatinib_sort$LN_IC50), "High", "Low")
+group <- ifelse(dasatinib_filter$LN_IC50 > median(dasatinib_filter$LN_IC50), "High", "Low")
 table(group)
-boxplot(dasatinib_sort$LN_IC50 ~ group)
+boxplot(dasatinib_filter$LN_IC50 ~ group)
 design = model.matrix(~group);
 design %>% head()
 colnames(design) = c("Mean"
@@ -82,13 +88,13 @@ colnames(design) = c("Mean"
 )
 
 # Fit the data to the model
-fit = lmFit(expDat_sort, design)
+fit = lmFit(expDat_final, design)
 fit = eBayes(fit)
-tt = topTable(fit, coef="HighVsLow", adjust="BH",n=nrow(expDat_sort))
+tt = topTable(fit, coef="HighVsLow", adjust="BH",n=nrow(expDat_final))
 options(digits=4)
 tt[1:20,]
 # Take a quick look at the first gene for the hell of it
-plot(density(expDat_sort[,1]))
+plot(density(expDat_final[,1]))
 
 # Count number of significant genes
 sum(tt$adj.P.Val<0.01)
@@ -115,13 +121,13 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
 #Check log fold change
 sign(tt$logFC)
 # Create a histogram of IC50 values to visualise them
-hist(dasatinib_sort$LN_IC50,50)
+hist(dasatinib_filter$LN_IC50,50)
 # Take a quick look at the median, just out of interest
-median(dasatinib_sort$LN_IC50)
+median(dasatinib_filter$LN_IC50)
 head(tt)
 
 #Find the top expression values. Shows that high expression correlates to high ic50, and V.V (e.g. this gene is protective against dasatinib)
-topExp <- expDat_sort[match(rownames(tt)[1], rownames(expDat_sort)),]
+topExp <- expDat_final[match(rownames(tt)[1], rownames(expDat_final)),]
 df <- data.frame(topGene=topExp, ic50=group)
 ggplot(df, aes(x=ic50, y=topGene)) + geom_boxplot()
 ```
@@ -130,30 +136,30 @@ ggplot(df, aes(x=ic50, y=topGene)) + geom_boxplot()
 
 ```{r Differential Expression Analysis With AUC}
 # Check all this stuff
-dim(expDat_sort)
-dim(dasatinib_sort)
-head(expDat_sort)[,1:5]
-head(dasatinib_sort)[,1:5]
-sum(colnames(expDat_sort)==dasatinib_sort$CCLE_Name)
-names(dasatinib_sort)
+dim(expDat_final)
+dim(dasatinib_filter)
+head(expDat_final)[,1:5]
+head(dasatinib_filter)[,1:5]
+sum(colnames(expDat_final)==dasatinib_filter$CCLE_Name)
+names(dasatinib_filter)
 
 # lmFit
-group2 <- ifelse(dasatinib_sort$AUC > median(dasatinib_sort$AUC), "High", "Low")
+group2 <- ifelse(dasatinib_filter$AUC > median(dasatinib_filter$AUC), "High", "Low")
 table(group2)
-boxplot(dasatinib_sort$AUC ~ group2)
+boxplot(dasatinib_filter$AUC ~ group2)
 design2 = model.matrix(~group2);
 design2 %>% head()
 colnames(design2) = c("Mean"
 ,"HighVsLow"
 )
 # Fit the data to the model
-fit2 = lmFit(expDat_sort, design2)
+fit2 = lmFit(expDat_final, design2)
 fit2 = eBayes(fit2)
-tt2 = topTable(fit2, coef="HighVsLow", adjust="BH",n=nrow(expDat_sort))
+tt2 = topTable(fit2, coef="HighVsLow", adjust="BH",n=nrow(expDat_final))
 options(digits=4)
 tt2[1:20,]
 # Take a quick look at the first gene for the hell of it
-plot(density(expDat_sort[,1]))
+plot(density(expDat_final[,1]))
 
 # Count number of significant genes
 sum(tt2$adj.P.Val<0.01)
@@ -178,13 +184,13 @@ dim(geneNames2)
 # Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
 cat(na.omit(tt2$symbol[1:300]),sep="\n")
 # Create a histogram of AUC values to visualise them
-hist(dasatinib_sort$AUC,50)
+hist(dasatinib_filter$AUC,50)
 # Take a quick look at the median, just out of interest
-median(dasatinib_sort$AUC)
+median(dasatinib_filter$AUC)
 head(tt2)
 
 #Find the top expression values. Shows that high expression correlates to low AUC, and V.V (e.g. this gene is protective against dasatinib)
-topExp2 <- expDat_sort[match(rownames(tt2)[1], rownames(expDat_sort)),]
+topExp2 <- expDat_final[match(rownames(tt2)[1], rownames(expDat_final)),]
 df2 <- data.frame(topGene=topExp2, AUC=group)
 ggplot(df2, aes(x=AUC, y=topGene)) + geom_boxplot()
 ```
