@@ -34,8 +34,9 @@ library(org.Hs.eg.db)
 
 
 
-```{r Create the first big file to use}
-#expDat Processing
+```{r Create the first big file to use, results='hide'}
+# Output suppressed cause setDT prints a whole lot of useless stuff
+# expDat Processing
 ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 logExpDat <- log(ccleExpData + 0.5)
 dge <- DGEList(counts=ccleExpData)
@@ -65,7 +66,6 @@ expDat_all <- as.data.frame(expDat_all)
 setDT(expDat_all, keep.rownames = "CCLE_Name")[]
 # "dasatinib_sort" can now be combined with "expDat_sort"
 dasatinib_all = full_join(x=dasatinib_sort, y= expDat_all, by=c("CCLE_Name" = "CCLE_Name"))
-head(dasatinib_all)
 ```
 
 
@@ -129,7 +129,7 @@ median(dasatinib_sort$LN_IC50)
 head(tt)
 
 #Find the top expression values. Shows that high expression correlates to high ic50, and V.V (e.g. this gene is protective against dasatinib)
-topExp <- expDat_sort[match(rownames(tt)[1], rownames(expDat_sort)),]
+topExp <- expDat_sort[match(tt$rn[1], rownames(expDat_sort)),]
 df <- data.frame(topGene=topExp, ic50=group)
 ggplot(df, aes(x=ic50, y=topGene)) + geom_boxplot()
 ```
@@ -192,7 +192,7 @@ median(dasatinib_sort$AUC)
 head(tt2)
 
 #Find the top expression values. Shows that high expression correlates to low AUC, and V.V (e.g. this gene is protective against dasatinib)
-topExp2 <- expDat_sort[match(rownames(tt2)[1], rownames(expDat_sort)),]
+topExp2 <- expDat_sort[match(tt2$rn[1], rownames(expDat_sort)),]
 df2 <- data.frame(topGene=topExp2, AUC=group)
 ggplot(df2, aes(x=AUC, y=topGene)) + geom_boxplot()
 ```

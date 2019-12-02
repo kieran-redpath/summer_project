@@ -2,7 +2,7 @@
 title: "dasatinib_dif_exp_analysis_3_tissues"
 author: "Kieran Redpath"
 date: "2 December 2019"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +26,7 @@ library(org.Hs.eg.db)
 
 
 
-```{r Create the first big file to use}
+```{r Create the first big file to use, results='hide'}
 #expDat Processing
 ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 logExpDat <- log(ccleExpData + 0.5)
@@ -57,7 +57,6 @@ expDat_all <- as.data.frame(expDat_all)
 setDT(expDat_all, keep.rownames = "CCLE_Name")[]
 # "dasatinib_sort" can now be combined with "expDat_sort"
 dasatinib_all = full_join(x=dasatinib_sort, y= expDat_all, by=c("CCLE_Name" = "CCLE_Name"))
-head(dasatinib_all)
 ```
 
 ```{r Make a nice clean version of "dasatinib_sort" that only has BC,CC,GC info}
@@ -127,7 +126,7 @@ median(dasatinib_filter$LN_IC50)
 head(tt)
 
 #Find the top expression values. Shows that high expression correlates to high ic50, and V.V (e.g. this gene is protective against dasatinib)
-topExp <- expDat_final[match(rownames(tt)[1], rownames(expDat_final)),]
+topExp <- expDat_final[match(tt$rn[1], rownames(expDat_final)),]
 df <- data.frame(topGene=topExp, ic50=group)
 ggplot(df, aes(x=ic50, y=topGene)) + geom_boxplot()
 ```
@@ -190,7 +189,7 @@ median(dasatinib_filter$AUC)
 head(tt2)
 
 #Find the top expression values. Shows that high expression correlates to low AUC, and V.V (e.g. this gene is protective against dasatinib)
-topExp2 <- expDat_final[match(rownames(tt2)[1], rownames(expDat_final)),]
+topExp2 <- expDat_final[match(tt2$rn[1], rownames(expDat_final)),]
 df2 <- data.frame(topGene=topExp2, AUC=group)
 ggplot(df2, aes(x=AUC, y=topGene)) + geom_boxplot()
 ```
@@ -211,7 +210,6 @@ tt3 <- dplyr::rename(tt3, "logFC_Sign" = "sign(tt3$IC50_logFC) * sign(tt3$AUC_lo
 View(tt3)
 # Look at the samples that are potentially important- don't get good results :(
 SigSamples <- filter(tt3, tt3$logFC_Sign == -1, tt3$IC50_Adj_PVal < 0.05)
-View(SigSamples)
 # Sort based on average significance rank across AUC and IC50 (filter based on significant adj. p values, and consistent signs between the two analysis)
 tt3 <- 
   tt3 %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
