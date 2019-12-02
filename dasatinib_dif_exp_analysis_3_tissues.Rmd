@@ -1,23 +1,15 @@
 ---
-title: "dasatinib_dif_exp_analysis_29_11_19"
+title: "dasatinib_dif_exp_analysis_3_tissues"
 author: "Kieran Redpath"
-date: "29 November 2019"
-output: github_document
+date: "2 December 2019"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_3_tissues", cause I'm lazy and didn't change the names of objects
-
-limma differential expression analysis (lecture 3)
-look at high and low ic50 groups, and then find out which genes are differentially expressed between the two groups
-data frame with all the samples that have dasatinib data, and all the genes. These will have high/low ic50 associated with them (50/50 split)
-Will show you which genes are involved in dasatinib sensitivity
-fit model with lmfit and ebayes, gives you a table with p values, showing significance of differential expression
-volcano plot tells you how big and significant the difference is, stuff that comes out the top will be the most important
-Pathway analysis to see what it's actually changing
+NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_29_11_19", cause I'm lazy and didn't change the names of objects
 
 ```{r Load packages}
 library(limma)
@@ -244,5 +236,3 @@ ggplot(data=tt3, mapping=aes(x=AUC_Sign,y=Avg_Exp, group=AUC_Sign, fill=AUC_Sign
 # Scatter plot
 ggplot(data=tt3, mapping=aes(x=AUC_logFC,y=Avg_Exp)) +geom_point()
 ```
-
-
