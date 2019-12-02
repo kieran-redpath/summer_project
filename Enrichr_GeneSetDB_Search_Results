@@ -1,0 +1,23 @@
+*Enrichr and GeneSetDB results for significant genes (for dasatinib AUC and IC50) from breast, colorectal, and stomach cancer.*
+
+Enrichr Pathways:
+Integrin beta-4. (BioPlanet 2019)
+Laminin interactions H. sapiens (Reactome 2016)
+ECM-receptor interactions. (KEGG 2019 Human)
+Inflammatory Response Pathway WP453. (Wikipathways 2019 Human)
+
+Enrichr Ontologies:
+ECM organisation. (GO Biological Process 2018)
+Calcium channel regulator activity. (GO Molecular Function 2018)
+Focal adhesion. (GO Cellular Component 2018)
+
+Enrichr Misc:
+Laminin pops up a few times.
+
+GeneSetDB:
+Alpha6 beta4 integrin-ligand interactions. (Pathway Interaction Database)
+
+Notes:
+Integrin beta-4 "is likely to play a pivotal role in the biology of invasive carcinoma" according to Entrez Gene.
+Laminin may be involved in EMT in cancer.
+Laminins are involved in ECM organisation, as well as the WP53 inflammatory response pathway.
