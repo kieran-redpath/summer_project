@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_29_11_19", "dif_exp_analysis_GDSC1_4_12_19", or any of the other things that are all basically the same, cause I'm lazy and didn't change the names of objects
 
-The original (GDSC1) files you had where just called "GDSC_AUC" and "GDSC_IC50". This doesn't say whether ic50 is logged or not. The GDSC2 file you were working with contained auc and (specifically) ln_ic50. This analysis looks at that same GDSC2 file, but also at the equivalent file for GDSC1- that contains (specifically ln_ic50 data).
+The original (GDSC1) files you had where just called "GDSC_AUC" and "GDSC_IC50". This doesn't say whether ic50 is logged or not. The GDSC2 file you were working with contained auc and (specifically) ln_ic50. This analysis looks at that same GDSC2 file, but also at the equivalent file for GDSC1- that contains specifically ln_ic50 data.
 
 ```{r Load packages}
 library(limma)
