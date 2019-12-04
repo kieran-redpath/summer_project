@@ -9,7 +9,7 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_29_11_19, or dasatinib_dif_exp_analysis_3_tissues", cause I'm lazy and didn't change the names of objects
+NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_29_11_19", "dif_exp_analysis_GDSC1_4_12_19", "IC50_AUC_Rel_Test" or any of the other things that are all basically the same, cause I'm lazy and didn't change the names of objects
 
 This can be re-used to generate plots for a bunch of different drugs, to quadruple etc stuff.
 
