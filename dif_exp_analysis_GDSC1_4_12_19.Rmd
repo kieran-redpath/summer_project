@@ -283,3 +283,104 @@ ggplot(data=dasatinib_filter, aes(x=AUC, y=LN_IC50)) +
 geom_point() +
 facet_wrap(~TCGA_DESC)
 ```
+
+
+
+# 5/12/19
+
+## This bit is weird, relies on code from "CCLE_GDSC_Working_21_11_19.Rmd". Currently specifically for dasatinib, cause it's already there
+
+```{r Check the original data that you worked with in the aforementioned document, echo=FALSE, include=FALSE}
+AUC <- t(dasatinib_auc_sort)
+colnames(AUC) <- "AUC"
+AUC <- as.data.frame(AUC)
+setDT(AUC, keep.rownames = TRUE)[]
+
+IC50 <- t(dasatinib_ic50_sort)
+colnames(IC50) <- "IC50"
+IC50 <- as.data.frame(IC50)
+setDT(IC50, keep.rownames = TRUE)[]
+
+AUC_IC50 <- full_join(AUC, IC50, by="rn")
+AUC_IC50$Tissue <- AUC_IC50$rn
+
+AUC_IC50$Tissue <- strsplit(AUC_IC50$Tissue, "_") %>% 
+  lapply(., function(x) paste0(x[-1], collapse='_')) %>%  
+  unlist()
+
+ggplot(data=AUC_IC50, aes(x=AUC, y=IC50)) +
+geom_point()
+
+AUC_IC50_Filter <- AUC_IC50 %>% filter(., Tissue=="STOMACH" | Tissue=="BREAST" | Tissue=="LARGE_INTESTINE")
+
+  
+ggplot(data=AUC_IC50_Filter, aes(x=AUC, y=IC50)) +
+geom_point()
+```
+
+
+
+```{r Do it with some other drugs, echo=FALSE, include=FALSE}
+# Setup For All Drugs
+# Load Data
+gdsc_auc <- read.csv('CCLE_GDSC/Data/GDSC_AUC.csv', sep=',')
+gdsc_ic50 <- read.csv('CCLE_GDSC/Data/GDSC_IC50.csv', sep=',')
+dim(gdsc_auc)
+dim(gdsc_ic50)
+gdsc_auc[1:5,1:5]
+gdsc_ic50[1:5,1:5]
+# GDSC drug codes
+drugCodes <- read.csv('CCLE_GDSC/Data/gdsc_codes_1.csv', sep= ',')
+head(drugCodes)
+
+
+# Docetaxel
+# Find Docetaxel (drug_id is "1007")
+drugCodes %>% dplyr::filter(., drug_name == "Docetaxel")
+# Extract Dasatinib data
+docetaxel_ic50 <- gdsc_ic50 %>% dplyr::filter(., X=="GDSC:1007")
+docetaxel_auc <- gdsc_auc %>% dplyr::filter(., X=="GDSC:1007")
+# Count non-NA values (! means the opposite of is.na, so is *not* NA)
+sum(!is.na(docetaxel_ic50))
+sum(!is.na(docetaxel_auc))
+# GDSC cell lines with Dasatinib AUC data
+names(docetaxel_auc)[!is.na(docetaxel_auc)][-1]
+# Replace names with CCLE names
+ic50_names_docetaxel <- match(names(docetaxel_ic50), 
+                  gsub("-",".",depMapCCLElines$Broad_ID, fixed=TRUE))
+names(docetaxel_ic50) <- depMapCCLElines$CCLE_Name[ic50_names_docetaxel]
+head(docetaxel_ic50)[,1:5]
+auc_names_docetaxel <- match(names(docetaxel_auc), 
+                  gsub("-",".",depMapCCLElines$Broad_ID, fixed=TRUE))
+names(docetaxel_auc) <- depMapCCLElines$CCLE_Name[auc_names_docetaxel]
+head(docetaxel_auc)[,1:5]
+# commonSamples
+commonSamples_docetaxel <- intersect(names(docetaxel_ic50),colnames(expDat))
+ic50_match_docetaxel <- match(commonSamples_docetaxel, names(docetaxel_ic50))
+auc_match_docetaxel <- match(commonSamples_docetaxel, names(docetaxel_auc))
+expDat_match_docetaxel <- match(commonSamples_docetaxel, colnames(expDat))
+docetaxel_ic50_sort <- docetaxel_ic50[na.omit(ic50_match_docetaxel)]
+docetaxel_auc_sort <- docetaxel_auc[na.omit(auc_match_docetaxel)]
+# Do some plots
+AUC_docetaxel <- t(docetaxel_auc_sort)
+colnames(AUC_docetaxel) <- "AUC"
+AUC_docetaxel <- as.data.frame(AUC_docetaxel)
+setDT(AUC_docetaxel, keep.rownames = TRUE)[]
+IC50_docetaxel <- t(docetaxel_ic50_sort)
+colnames(IC50_docetaxel) <- "IC50"
+IC50_docetaxel <- as.data.frame(IC50_docetaxel)
+setDT(IC50_docetaxel, keep.rownames = TRUE)[]
+AUC_IC50_docetaxel <- full_join(AUC_docetaxel, IC50_docetaxel, by="rn")
+AUC_IC50_docetaxel$Tissue <- AUC_IC50_docetaxel$rn
+AUC_IC50_docetaxel$Tissue <- strsplit(AUC_IC50_docetaxel$Tissue, "_") %>% 
+  lapply(., function(x) paste0(x[-1], collapse='_')) %>%  
+  unlist()
+ggplot(data=AUC_IC50_docetaxel, aes(x=AUC, y=IC50)) +
+geom_point()
+AUC_IC50_docetaxel_Filter <- AUC_IC50_docetaxel %>% filter(., Tissue=="STOMACH" | Tissue=="BREAST" | Tissue=="LARGE_INTESTINE")
+ggplot(data=AUC_IC50_docetaxel_Filter, aes(x=AUC, y=IC50)) +
+geom_point()
+```
+
+
+

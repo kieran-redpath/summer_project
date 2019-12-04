@@ -215,7 +215,7 @@ dasatinib_auc_sort[1:5]
 dasatinib_ic50_sort[1:5]
 ```
 
-
+##### RUN FROM HERE. Trying to work this data (GDSC_IC50 and GDSC_AUC) to plot the relationship between the two
 
 # 20_11_19
 
@@ -242,7 +242,7 @@ CCLElinesBCCCGC <- depMapCCLElines %>%
 # Rename CCLElinesBCCCGC rows
 l <- as.list(CCLElinesBCCCGC$CCLE_Name)
 rownames(CCLElinesBCCCGC) <- l
-CCLElinesBCCCGC <- select (CCLElinesBCCCGC, -c(CCLE_Name))
+CCLElinesBCCCGC <- dplyr::select (CCLElinesBCCCGC, -c(CCLE_Name))
 
 ## One way to combine data by a specific thing:
 # Combine dasatinib data and CCLElinesBCCCGC
@@ -326,7 +326,7 @@ CDH1_Exp_Levels$CDH1_Expression <- ifelse(CDH1_Exp_Levels$ENSG00000039068.14 < q
 
 
 
-```{r Save Some Important Files for the Next Steps}
+```{r Save Some Important Files for the Next Steps, echo=FALSE, include=FALSE}
 #This will be used a lot in the next document
 write.csv(CCLE_dasat_BCCCGC,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CCLE_dasat_BCCCGC.csv", row.names = FALSE)
 write.csv(CDH1_Exp_Levels,"~/Documents/R Data/summer_project/CCLE_GDSC/Data/CDH1_Exp_Levels.csv", row.names = FALSE)
