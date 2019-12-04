@@ -1,0 +1,284 @@
+---
+title: "IC50_AUC_Rel_Test"
+author: "Kieran Redpath"
+date: "4 December 2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_29_11_19, or dasatinib_dif_exp_analysis_3_tissues", cause I'm lazy and didn't change the names of objects
+
+This can be re-used to generate plots for a bunch of different drugs, to quadruple etc stuff.
+
+```{r Load packages}
+library(limma)
+library(edgeR)
+library(data.table)
+library(magrittr)
+library(ggplot2)
+library(CePa)
+library(dplyr)
+library(tidyverse)
+library(ggbeeswarm)
+library(org.Hs.eg.db)
+```
+
+
+
+```{r Create the first big file to use, results='hide'}
+#expDat Processing
+ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
+logExpDat <- log(ccleExpData + 0.5)
+dge <- DGEList(counts=ccleExpData)
+dge <- calcNormFactors(dge)
+v <- voom(dge, plot=TRUE)
+expDat <- v$E
+
+# GDSC2 Processing (from old document)
+GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
+dim(GDSC2)
+Lapatinib <- GDSC2 %>% filter(., DRUG_NAME=="Lapatinib")
+expDatsplit <- strsplit(colnames(expDat), "_") %>% 
+  lapply(., function(x) x[1]) %>% 
+  unlist()
+colnames(expDat) <- expDatsplit
+Lapatinib$CELL_LINE_NAME <- gsub("-","",Lapatinib$CELL_LINE_NAME, fixed=TRUE)
+commonSamples <- intersect(Lapatinib$CELL_LINE_NAME,colnames(expDat))
+expDat_match <- match(commonSamples, colnames(expDat))
+expDat_sort <- expDat[ , na.omit(expDat_match)]
+Lapatinib_match <- match(commonSamples, Lapatinib$CELL_LINE_NAME)
+Lapatinib_sort <- Lapatinib[na.omit(Lapatinib_match),]
+colnames(Lapatinib_sort)[5] <- "CCLE_Name"
+Lapatinib_sort$AUC_Level <- ifelse(Lapatinib_sort$AUC < quantile(Lapatinib_sort$AUC, 0.5, na.rm=TRUE), "Low","High")
+# expDat Processing
+expDat_all <- t(expDat_sort)
+expDat_all <- as.data.frame(expDat_all)
+setDT(expDat_all, keep.rownames = "CCLE_Name")[]
+# "Lapatinib_sort" can now be combined with "expDat_sort"
+Lapatinib_all = full_join(x=Lapatinib_sort, y= expDat_all, by=c("CCLE_Name" = "CCLE_Name"))
+```
+
+```{r Make a nice clean version of "Lapatinib_sort" that only has BC,CC,GC info}
+View(Lapatinib_sort)
+Lapatinib_filter <- filter(Lapatinib_sort, TCGA_DESC == "COREAD" | TCGA_DESC == "BRCA" | TCGA_DESC == "STAD")
+View(Lapatinib_filter)
+expDat_filter <- match(Lapatinib_filter$CCLE_Name, colnames(expDat_sort))
+expDat_final <- expDat_sort[,expDat_filter]
+```
+
+```{r Differential Expression Analysis With IC50}
+# Check all this stuff
+dim(expDat_final)
+dim(Lapatinib_filter)
+head(expDat_final)[,1:5]
+head(Lapatinib_filter)[,1:5]
+sum(colnames(expDat_final)==Lapatinib_filter$CCLE_Name)
+names(Lapatinib_filter)
+
+# lmFit
+group <- ifelse(Lapatinib_filter$LN_IC50 > median(Lapatinib_filter$LN_IC50), "High", "Low")
+table(group)
+boxplot(Lapatinib_filter$LN_IC50 ~ group)
+design = model.matrix(~group);
+design %>% head()
+colnames(design) = c("Mean"
+,"HighVsLow"
+)
+
+# Fit the data to the model
+fit = lmFit(expDat_final, design)
+fit = eBayes(fit)
+tt = topTable(fit, coef="HighVsLow", adjust="BH",n=nrow(expDat_final))
+options(digits=4)
+tt[1:20,]
+# Take a quick look at the first gene for the hell of it
+plot(density(expDat_final[,1]))
+
+# Count number of significant genes
+sum(tt$adj.P.Val<0.01)
+
+## Plot log fold-change _versus_ -log(P-value). This graph is the important one, things up the top and spread out are useful associations
+## (i.e., higher number = lower p-value):
+volcanoplot(fit, coef="HighVsLow")
+
+split <- strsplit(rownames(tt),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
+geneNames <- select(org.Hs.eg.db, keys = split, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
+head(split)
+
+# What does the top table look like?
+dim(tt)
+tt$symbol <- geneNames$SYMBOL[match(split, geneNames$ENSEMBL)]
+setDT(tt, keep.rownames = TRUE)[]
+
+# Check the data: Output shows that some ENSEMBL ID's have multiple regular gene names
+length(split)
+dim(geneNames)
+
+# Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
+cat(na.omit(tt$symbol[1:50]),sep="\n")
+#Check log fold change
+sign(tt$logFC)
+# Create a histogram of IC50 values to visualise them
+hist(Lapatinib_filter$LN_IC50,50)
+# Take a quick look at the median, just out of interest
+median(Lapatinib_filter$LN_IC50)
+head(tt)
+
+#Find the top expression values. Shows that high expression correlates to high ic50, and V.V (e.g. this gene is protective against Lapatinib)
+topExp <- expDat_final[match(tt$rn[1], rownames(expDat_final)),]
+df <- data.frame(topGene=topExp, ic50=group)
+ggplot(data=df, mapping=aes(x=ic50, y=topGene, fill=ic50)) +
+  labs(x="IC50 level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  ggtitle("IC50 Vs topGene Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
+```
+
+
+
+```{r Differential Expression Analysis With AUC}
+# Check all this stuff
+dim(expDat_final)
+dim(Lapatinib_filter)
+head(expDat_final)[,1:5]
+head(Lapatinib_filter)[,1:5]
+sum(colnames(expDat_final)==Lapatinib_filter$CCLE_Name)
+names(Lapatinib_filter)
+
+# lmFit
+group2 <- ifelse(Lapatinib_filter$AUC > median(Lapatinib_filter$AUC), "High", "Low")
+table(group2)
+boxplot(Lapatinib_filter$AUC ~ group2)
+design2 = model.matrix(~group2);
+design2 %>% head()
+colnames(design2) = c("Mean"
+,"HighVsLow"
+)
+# Fit the data to the model
+fit2 = lmFit(expDat_final, design2)
+fit2 = eBayes(fit2)
+tt2 = topTable(fit2, coef="HighVsLow", adjust="BH",n=nrow(expDat_final))
+options(digits=4)
+tt2[1:20,]
+# Take a quick look at the first gene for the hell of it
+plot(density(expDat_final[,1]))
+
+# Count number of significant genes
+sum(tt2$adj.P.Val<0.01)
+
+## Plot log fold-change _versus_ -log(P-value). This graph is the important one, things up the top and spread out are useful associations
+## (i.e., higher number = lower p-value):
+volcanoplot(fit2, coef="HighVsLow")
+
+split2 <- strsplit(rownames(tt2),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
+geneNames2 <- select(org.Hs.eg.db, keys = split2, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
+head(split2)
+
+# What does the top table look like?
+dim(tt2)
+tt2$symbol <- geneNames2$SYMBOL[match(split2, geneNames2$ENSEMBL)]
+setDT(tt2, keep.rownames = TRUE)[]
+
+# Check the data: Output shows that some ENSEMBL ID's have multiple regular gene names
+length(split2)
+dim(geneNames2)
+
+# Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
+cat(na.omit(tt2$symbol[1:50]),sep="\n")
+# Create a histogram of AUC values to visualise them
+hist(Lapatinib_filter$AUC,50)
+# Take a quick look at the median, just out of interest
+median(Lapatinib_filter$AUC)
+head(tt2)
+
+#Find the top expression values. Shows that high expression correlates to low AUC, and V.V (e.g. this gene is protective against Lapatinib)
+topExp2 <- expDat_final[match(tt2$rn[1], rownames(expDat_final)),]
+df2 <- data.frame(topGene=topExp2, AUC=group)
+ggplot(data=df2, mapping=aes(x=AUC, y=topGene, fill=AUC)) +
+  labs(x="AUC level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  ggtitle("AUC Vs topGene Expression") +
+  geom_boxplot() +
+  geom_beeswarm()
+```
+
+
+
+```{r Find the overlap between the significant samples, specifying those that have a -log fold change, i.e less resistance?}
+# Create a table with ensembl ID, gene symbol, adj. p value, and sign for AUC and IC50
+tt3 <- full_join(tt, tt2, by= "rn")
+tt3 <- dplyr::select(tt3, -c("symbol.x", "P.Value.y", "P.Value.x", "t.y", "t.x", "B.x", "B.y", "AveExpr.x"))
+tt3 <- dplyr::rename(tt3, "Gene_Symbol" = "symbol.y", "AUC_logFC" = "logFC.y", "Avg_Exp" = "AveExpr.y", "AUC_Adj_PVal" = "adj.P.Val.y", "IC50_logFC" = "logFC.x", "IC50_Adj_PVal" = "adj.P.Val.x", "Ensembl_ID" = "rn")
+tt3 <- tt3[c(7,1,5,2,3,4,6)]
+# Find out if the log fold change sign is consistent with significance. Remember, -logFC relates to resistance
+tt3 <- mutate(tt3, sign(tt3$IC50_logFC), sign(tt3$AUC_logFC))
+tt3 <- mutate(tt3, sign(tt3$IC50_logFC)*sign(tt3$AUC_logFC))
+# Multiply signs together, keep genes where the result is negative (cause you want two different signs)
+tt3 <- dplyr::rename(tt3, "logFC_Sign" = "sign(tt3$IC50_logFC) * sign(tt3$AUC_logFC)", "IC50_Sign" = "sign(tt3$IC50_logFC)", "AUC_Sign" = "sign(tt3$AUC_logFC)")
+View(tt3)
+# Look at the samples that are potentially important- don't get good results :(
+SigSamples <- filter(tt3, tt3$logFC_Sign == -1, tt3$IC50_Adj_PVal < 0.05)
+# Sort based on average significance rank across AUC and IC50 (filter based on significant adj. p values, and consistent signs between the two analysis)
+tt3 <- 
+  tt3 %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
+  mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
+  mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
+  arrange(., avg_rank)
+
+head(tt)
+head(tt2)
+View(tt3)
+
+# When you actually get a good list of genes, analyse with enrichr and genesetDB
+```
+
+
+
+```{r Plot gene expression vs AUC and gene expression vs IC50, on a scatter plot and boxplot}
+# Gene expression vs IC50
+# Boxplot
+ggplot(data=tt3, mapping=aes(x=IC50_Sign,y=Avg_Exp, group=IC50_Sign, fill=IC50_Sign)) +
+  geom_boxplot()
+ggplot(data=tt3, mapping=aes(x=IC50_logFC,y=Avg_Exp)) +geom_point()
+
+# Gene expression vs AUC
+# Boxplot
+ggplot(data=tt3, mapping=aes(x=AUC_Sign,y=Avg_Exp, group=AUC_Sign, fill=AUC_Sign)) +
+  geom_boxplot()
+# Scatter plot
+ggplot(data=tt3, mapping=aes(x=AUC_logFC,y=Avg_Exp)) +geom_point()
+```
+
+
+
+```{r Find genes that appear significant for IC50 and AUC}
+Sig_Genes_IC50 <- cat(na.omit(tt$symbol[1:100]),sep="\n")
+Sig_Genes_IC50 <- as.vector(Sig_Genes_IC50)
+Sig_Genes_AUC <- cat(na.omit(tt2$symbol[1:100]),sep="\n")
+Sig_Genes_AUC <- as.vector(Sig_Genes_AUC)
+
+Sig_Genes <- intersect(Sig_Genes_IC50, Sig_Genes_AUC)
+```
+
+
+
+```{r Check the data}
+# Check the spread across the different tissues
+ggplot(data=Lapatinib_filter, aes(x=TCGA_DESC, y=LN_IC50)) +
+geom_boxplot() +
+geom_beeswarm()
+
+# Split the plot into tissue type and visualise the relationship between AUC and LN_IC50
+ggplot(data=Lapatinib_filter, aes(x=AUC, y=LN_IC50)) +
+geom_point() +
+facet_wrap(~TCGA_DESC)
+
+# Save that figure
+ggsave("Lapatinib_relationship.png", ggplot(data=Lapatinib_filter, aes(x=AUC, y=LN_IC50)) +
+geom_point() +
+facet_wrap(~TCGA_DESC))
+```
+
+Do these plots with some other random drugs to figure out what the relationship between LN_IC50 and AUC is/should be/oh god please help.
