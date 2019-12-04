@@ -1,7 +1,7 @@
 ---
-title: "dasatinib_dif_exp_analysis_3_tissues"
+title: "dif_exp_analysis_GDSC1_4_12_19"
 author: "Kieran Redpath"
-date: "2 December 2019"
+date: "4 December 2019"
 output: github_document
 ---
 
@@ -9,7 +9,12 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+
+
 NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_29_11_19", "dif_exp_analysis_GDSC1_4_12_19", or any of the other things that are all basically the same, cause I'm lazy and didn't change the names of objects
+
+The original (GDSC1) files you had where just called "GDSC_AUC" and "GDSC_IC50". This doesn't say whether ic50 is logged or not. The GDSC2 file you were working with contained auc and (specifically) ln_ic50. This analysis looks at that same GDSC2 file, but also at the equivalent file for GDSC1- that contains (specifically ln_ic50 data).
 
 ```{r Load packages}
 library(limma)
@@ -35,10 +40,12 @@ dge <- calcNormFactors(dge)
 v <- voom(dge, plot=TRUE)
 expDat <- v$E
 
-# GDSC2 Processing (from old document)
+# GDSC Processing (from old document)
+GDSC1 <- fread('CCLE_GDSC/Data/GDSC1_fitted_dose_response_15Oct19.csv', sep= ';')
 GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
+dim(GDSC1)
 dim(GDSC2)
-dasatinib <- GDSC2 %>% filter(., DRUG_NAME=="Dasatinib")
+dasatinib <- GDSC1 %>% filter(., DRUG_NAME=="Dasatinib")
 expDatsplit <- strsplit(colnames(expDat), "_") %>% 
   lapply(., function(x) x[1]) %>% 
   unlist()
@@ -57,6 +64,9 @@ expDat_all <- as.data.frame(expDat_all)
 setDT(expDat_all, keep.rownames = "CCLE_Name")[]
 # "dasatinib_sort" can now be combined with "expDat_sort"
 dasatinib_all = full_join(x=dasatinib_sort, y= expDat_all, by=c("CCLE_Name" = "CCLE_Name"))
+
+#Find Cell Lines for BC, CC, and GC that are shared between the GDSC1 and GDSC2 cohorts. There's 808, only 1 less than the total number of cell lines in GDSC2. So Don't worry about the overlap.
+GDSC_Shared <- intersect(GDSC1$CELL_LINE_NAME, GDSC2$CELL_LINE_NAME)
 ```
 
 ```{r Make a nice clean version of "dasatinib_sort" that only has BC,CC,GC info}
@@ -129,7 +139,7 @@ head(tt)
 topExp <- expDat_final[match(tt$rn[1], rownames(expDat_final)),]
 df <- data.frame(topGene=topExp, ic50=group)
 ggplot(data=df, mapping=aes(x=ic50, y=topGene, fill=ic50)) +
-  labs(x="IC50 level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  labs(x="IC50 level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC1 and CCLE)") +
   ggtitle("IC50 Vs topGene Expression") +
   geom_boxplot() +
   geom_beeswarm()
@@ -196,7 +206,7 @@ head(tt2)
 topExp2 <- expDat_final[match(tt2$rn[1], rownames(expDat_final)),]
 df2 <- data.frame(topGene=topExp2, AUC=group)
 ggplot(data=df2, mapping=aes(x=AUC, y=topGene, fill=AUC)) +
-  labs(x="AUC level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC and CCLE)") +
+  labs(x="AUC level (top (high) or bottom (low) 50%)",y="Fold change in expression of most significant gene per cell line", caption="(Data from GDSC1 and CCLE)") +
   ggtitle("AUC Vs topGene Expression") +
   geom_boxplot() +
   geom_beeswarm()
@@ -273,11 +283,3 @@ ggplot(data=dasatinib_filter, aes(x=AUC, y=LN_IC50)) +
 geom_point() +
 facet_wrap(~TCGA_DESC)
 ```
-
-Do these plots with some other random drugs to figure out what the relationship between LN_IC50 and AUC is/should be/oh god please help.
-
-# 04/12/19
-
-## Look at GDSC1 instead, see what overlap you get between cell lines in GDSC 1 and 2, and plot them to look at the auc and ic50 relationship.
-
-
