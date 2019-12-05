@@ -385,11 +385,11 @@ Looks like either it's all -logged, or the relationship between ic50 and auc is 
 
 ### Find cell lines that are allegedly resistant/susceptible to a drug, and figure out what their IC50's are- are they high or low when they should be high or low (i.e resistant/susceptible, not neccesarily in that order) Should look up breast cancer cell lines, probably drugs like paclitaxel, doxarubicin, etc.
 
-#### Paclitaxel resistant breast cancer cell lines have higher paclitaxel *non log* ic50 values (e.g. 62nM 5 day) than non-resistant cells (e.g. 5 nM 5 day).
+#### Paclitaxel resistant breast cancer cell lines have higher paclitaxel *non log* ic50 values (e.g. 62nM 5 day) than non-resistant cells (e.g. 5 nM 5 day). This looks like it associates with lower AUC: On a dose-response curve, the y axis has % inhibition, and the x axis has concentration of the drug. so, if there's increased IC50, the concentration at 50% inhibition is further to the right of the graph, and there's less underneath the curve.
 
-Then go back to looking at signs (+/-), and trying to figure out what's associated with different ic50/auc. It might be different to what you think, depending on if your initial assumptions were based on regular or -logged data. From here, find a good list of significantly associated genes.
+Then go back to looking at signs (+/-, "dasatinib_dif_exp_analysis_29_11_19"), and trying to figure out what's associated with different ic50/auc. It might be different to what you think, depending on if your initial assumptions were based on regular or -logged data. From here, find a good list of significantly associated genes.
 
 Look up the paper on GOseq. GOseq does pathway analysis, adjusted by gene length (which is quite important), which is available as an r package. This allows you to use r to carry out similar processes as enrichr, but with adjusted data.
-Another pathway analysis package is also available- Mik will send you this at some point, along with examples on how to work it.
+ReactomePA is also available, but doesn't adjust for gene length.
 
 Also look at your significant gene list on enrichr.

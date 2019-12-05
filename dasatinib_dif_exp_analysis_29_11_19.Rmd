@@ -212,8 +212,20 @@ tt3 <- mutate(tt3, sign(tt3$IC50_logFC)*sign(tt3$AUC_logFC))
 tt3 <- dplyr::rename(tt3, "logFC_Sign" = "sign(tt3$IC50_logFC) * sign(tt3$AUC_logFC)", "IC50_Sign" = "sign(tt3$IC50_logFC)", "AUC_Sign" = "sign(tt3$AUC_logFC)")
 View(tt3)
 # Look at the samples that are potentially important- don't get good results :(
-SigSamples <- filter(tt3, tt3$logFC_Sign == -1, tt3$IC50_Adj_PVal < 0.05)
+###################### IMPORTANT!!! ######################
+### IF ALL THE DATA IS ACTUALLY -LOG, NOT LN, THEN THE RELATIONSHIP BETWEEN AUC AND IC50(-log) SHOULD BE +VE. THIS MEANS THAT THE SIGN WE'RE LOOKING FOR WILL BE +VE, NOT -VE! FROM HERE, WE'RE ASSUMING THEIR LABELLING IS WRONG! Adding in +ve AUC sign now for SigSamples, genes that are related to susceptibility to dasatinib will have a larger AUC (and theoretically larger "-log" IC50)
+# Coming back to this, 05/12/19
+# Filter based on significance, increased susceptibility to dasatinib, and positive correlation between AUC and "-log" IC50
+SigSamples <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.01, tt3$AUC_Adj_PVal < 0.01, tt3$AUC_Sign ==1)
+# Rank the samples based on average rank between the two p-values
+SigSamples <- 
+  SigSamples %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
+  mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
+  mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
+  arrange(., avg_rank)
 View(SigSamples)
+# Find the top 100 ranked genes, and look em up
+cat(na.omit(SigSamples$Gene_Symbol[1:100]),sep="\n")
 # Sort based on average significance rank across AUC and IC50 (filter based on significant adj. p values, and consistent signs between the two analysis)
 tt3 <- 
   tt3 %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
