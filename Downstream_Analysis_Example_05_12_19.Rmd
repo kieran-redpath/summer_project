@@ -9,17 +9,12 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-
-```
-
-
 ## Gene lists
 
  - There are __LOTS__ of situations where we might want to use a list of genes 
  to shed some biological light on our problem
  
- - Two typical situations:
+ - Two typical situations.
      - List of genes (e.g., differentially expressed between two conditions) that we want to gain some more insight (e.g., by including some additional biological annotation)
      - List of gene representing a specific biological function (e.g., tissue-specific expression) that we would like to obtain an expression summary for.
  
@@ -78,7 +73,6 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(gridExtra))
 ```
 
-install reactome.db
 
 ```{r, eval=FALSE}
 ## Load packages
@@ -93,6 +87,7 @@ library(gplots)
 library(dplyr)
 library(WGCNA)
 library(gridExtra)
+library(org.Hs.eg.db)
 ```
 
 ```{r}
@@ -585,3 +580,5 @@ screeplot(pca)
 mgHilo = ifelse(metagene < quantile(metagene,0.2), "mgLo", "mgHi")
 ggsurvplot(survfit(Surv(t.rfs, e.rfs) ~ mgHilo, subset=uppClin$er==0, 
            data=uppClin),pval=TRUE) + xlab("Time (years)")
+```
+
