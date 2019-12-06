@@ -335,7 +335,7 @@ length(allGenes)
 ## Here I've just randomly generated 0's and 1's. SHOULD I NOT BE DOING THIS?
 sigGenes <- rep(0, length(allGenes))
 names(sigGenes) <- allGenes
-## Randomly generate significant genes, based on gene length (longer trabscripts have higher chance of being significant)
+## Randomly generate significant genes, based on gene length (longer transcripts have higher chance of being significant)
 geneLengths <- getlength(allGenes, "hg19", id="knownGene")
 
 randSig <- which( runif(length(allGenes)) < geneLengths/20000 )
@@ -347,7 +347,7 @@ mt <- match(allGenes, names(rGeneByPath))
 ## Count how many of the reactome genes aren't in your data set
 sum(is.na(mt))
 
-## Get genes and pathays relevant to our analysis
+## Get genes and pathways relevant to our analysis
 rGeneByPath <- lapply(rGeneByPath[mt], function(x) intersect(x, names(rGenesPath)))
 head(rGeneByPath)
 
