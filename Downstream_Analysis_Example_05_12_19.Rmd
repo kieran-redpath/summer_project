@@ -102,7 +102,7 @@ gg_color_hue <- function(n) {
 
 ```{r}
 data(upp)
-expDat = exprs(upp)
+Eg_expDat = exprs(upp)
 upp
 ```
 
@@ -185,19 +185,19 @@ ggsurvplot(survfit(Surv(t.rfs, e.rfs) ~ grade, data=uppClin),
 ```{r}
 ## Only keep samples which do not have NA values for grade
 keep = which(!is.na(uppClin$grade))
-## Create design marix for linear model analysis
-design = model.matrix(~uppClin$grade)
-head(design)
+## Create design matrix for linear model analysis
+Eg_design = model.matrix(~uppClin$grade)
+head(Eg_design)
 ```
 
 ## Differential expression (G1 vs G3)
 
 ```{r, cache=TRUE}
 ## Fit linear model
-fit = lmFit(uppExpr[, keep], design) 
-fit = eBayes(fit)
+Eg_fit = lmFit(uppExpr[, keep], Eg_design) 
+Eg_fit = eBayes(Eg_fit)
 ## Extract results
-g3_vs_g1 = topTable(fit, coef=3, n=nrow(uppExpr), 
+g3_vs_g1 = topTable(Eg_fit, coef=3, n=nrow(uppExpr), 
                     adjust.method="holm")
 ## Identify significant genes
 sig = g3_vs_g1$adj.P.Val < 0.01 
@@ -208,7 +208,7 @@ sum(sig)
 ## Volcano plot
 
 ```{r, eval=FALSE}
-volcanoplot(fit, coef=3)
+volcanoplot(Eg_fit, coef=3)
 points(g3_vs_g1$logFC[which(sig)], -log10(g3_vs_g1$P.Value[which(sig)]), 
        cex=0.4, col='red', pch=16)
 abline(h = min(-log10(g3_vs_g1$P.Value[which(sig)])), lty=2, col='blue')
@@ -216,7 +216,7 @@ abline(h = min(-log10(g3_vs_g1$P.Value[which(sig)])), lty=2, col='blue')
 
 ```{r, echo=FALSE, fig.height=4, fig.width=6}
 par(mar=c(5, 4, 0, 2) + 0.1)
-volcanoplot(fit, coef=3)
+volcanoplot(Eg_fit, coef=3)
 points(g3_vs_g1$logFC[which(sig)], -log10(g3_vs_g1$P.Value[which(sig)]), 
        cex=0.4, col='red', pch=16)
 abline(h = min(-log10(g3_vs_g1$P.Value[which(sig)])), lty=2, col='blue')
@@ -236,7 +236,7 @@ sum(sigFC)
 ## Volcano plot with FC threshold
 
 ```{r, eval=FALSE}
-volcanoplot(fit, coef=3)
+volcanoplot(Eg_fit, coef=3)
 points(g3_vs_g1$logFC[which(sigFC)], 
        -log10(g3_vs_g1$P.Value[which(sigFC)]), 
        cex=0.6, col='red', pch=16)
@@ -246,7 +246,7 @@ abline(v = c(-1,1), lty=2, col='blue')
 
 ```{r, echo=FALSE, fig.height=3.5, fig.width=5}
 par(mar=c(5, 4, 0, 2) + 0.1)
-volcanoplot(fit, coef=3)
+volcanoplot(Eg_fit, coef=3)
 points(g3_vs_g1$logFC[which(sigFC)], 
        -log10(g3_vs_g1$P.Value[which(sigFC)]), 
        cex=0.6, col='red', pch=16)
@@ -257,9 +257,9 @@ abline(v = c(-1,1), lty=2, col='blue')
 ## Significant genes
 
 ```{r}
-sigGenes = rownames(g3_vs_g1)[which(sigFC)]
-sigGenes %>%  head(.,30)
-strsplit(sigGenes, "///") %>%  unlist() %>%  unique() %>% length()
+Eg_sigGenes = rownames(g3_vs_g1)[which(sigFC)]
+Eg_sigGenes %>%  head(.,30)
+strsplit(Eg_sigGenes, "///") %>%  unlist() %>%  unique() %>% length()
 ```
 
 ## Over-representation analysis: Enrichr
@@ -317,7 +317,7 @@ as.list(reactomePATHID2NAME)[1:2]
 
 ```{r, cache=TRUE}
 ## Convert gene list symbols to Entrez gene IDs
-sigEntrez = fData(upp)$EntrezGene.ID[ match(sigGenes, 
+sigEntrez = fData(upp)$EntrezGene.ID[ match(Eg_sigGenes, 
                             fData(upp)$Gene.symbol) ] %>%  
             as.vector()
 head(sigEntrez)
@@ -400,7 +400,7 @@ gseaplot(rPAgsea, geneSetID = "R-HSA-69278")
 
 ```{r}
 ## Extract expression data for gens of interest
-uppExprSig = uppExpr[match(sigGenes, rownames(uppExpr)), ]
+uppExprSig = uppExpr[match(Eg_sigGenes, rownames(uppExpr)), ]
 dim(uppExprSig)
 ## Use ggplot colours for Grades
 gradeCols = gg_color_hue(3)[as.numeric(as.factor(uppClin$grade))]

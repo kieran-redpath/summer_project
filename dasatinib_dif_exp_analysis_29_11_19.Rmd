@@ -274,40 +274,49 @@ Also look at your significant gene list on enrichr.
 
 
 
-```{r ReactomePA Analysis from Mik's Slides}
-## Adapt this code so it works with your data
+```{r ReactomePA Analysis from Mik's Slides, fig.height=3, fig.width=8}
+# Load packages
+library(ReactomePA)
+library(org.Hs.eg.db)
 
-sigEntrez = fData(upp)$EntrezGene.ID[ match(sigGenes,
- fData(upp)$Gene.symbol) ] %>%
- as.vector()
-head(sigEntrez)
-## [1] "387103" "23397" "7272" "54443" "55143" "9319"
-## Perform pathway analysis via ReactomePA
-rPAoverrep <- enrichPathway(gene=sigEntrez, organism = "human",
+# Create list of top associated genes
+Top150Genes <- as.character(na.omit(SigSamples$Gene_Symbol[1:150]))
+# Add Entrez ID's
+hs <- org.Hs.eg.db
+Top150GenesEntrez <- select(hs, 
+                            keys = Top150Genes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
+
+# Perform pathway analysis via ReactomePA
+# Gives you a nice table with some useful pathways
+dasat_rPAoverrep <- enrichPathway(gene=Top150GenesEntrez$ENTREZID, organism = "human",
  pvalueCutoff=0.05, readable=T)
+View(as.data.frame(dasat_rPAoverrep))
+# Visualise these as plots (note that they look weird in the inline output, have to be opened properly)
+barplot(dasat_rPAoverrep, showCategory=11, font.size=8)
+dotplot(dasat_rPAoverrep, showCategory=11, font.size=8)
+```
 
-rPAoverrep %>% as.data.frame() %>% View()
-
-barplot(rPAoverrep, showCategory=11, font.size=8)
-
-dotplot(rPAoverrep, showCategory=11, font.size=8)
 
 
-tstats = g3_vs_g1$t
-names(tstats) = fData(upp)$EntrezGene.ID[ match(rownames(g3_vs_g1),
+```{r}
+# More stuff
+dasat_tstats = g3_vs_g1$t
+names(dasat_tstats) = fData(upp)$EntrezGene.ID[ match(rownames(g3_vs_g1),
  fData(upp)$Gene.symbol) ] %>%
  as.vector()
-tstats = sort(tstats, decreasing=TRUE)
-head(tstats)
+dasat_tstats = sort(dasat_tstats, decreasing=TRUE)
+head(dasat_tstats)
 ## 387103 23397 7272 54443 55143 9319
 ## 12.57173 12.31195 12.01225 11.89672 11.87608 11.44096
-rPAgsea = gsePathway(tstats, nPerm=10000,
+dasat_rPAgsea = gsePathway(dasat_tstats, nPerm=10000,
  minGSSize=50, pvalueCutoff=0.2,
  pAdjustMethod="BH", verbose=FALSE)
 
-rPAgsea %>% as.data.frame() %>% View()
+dasat_rPAgsea %>% as.data.frame() %>% View()
 
-gseaplot(rPAgsea, geneSetID = "R-HSA-69278")
+gseaplot(dasat_rPAgsea, geneSetID = "R-HSA-69278")
 ```
 
 
