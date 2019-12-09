@@ -236,7 +236,7 @@ tt3 <- dplyr::rename(tt3, "logFC_Sign" = "sign(tt3$IC50_logFC) * sign(tt3$AUC_lo
 ### IF ALL THE DATA IS ACTUALLY -LOG, NOT LN, THEN THE RELATIONSHIP BETWEEN AUC AND IC50(-log) SHOULD BE +VE. THIS MEANS THAT THE SIGN WE'RE LOOKING FOR WILL BE +VE, NOT -VE! FROM HERE, WE'RE ASSUMING THEIR LABELLING IS WRONG! Adding in +ve AUC sign now for SigSamples, genes that are related to susceptibility to dasatinib will have a larger AUC (and theoretically larger "-log" IC50)
 # Coming back to this, 05/12/19
 # Filter based on significance, increased susceptibility to dasatinib, larger log fold change and positive correlation between AUC and "-log" IC50
-SigSamples <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.01, tt3$AUC_Adj_PVal < 0.01, abs(tt3$IC50_logFC) > 1, abs(tt3$AUC_logFC) > 1)
+SigSamples <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.05, tt3$AUC_Adj_PVal < 0.05, abs(tt3$IC50_logFC) > log2(1.5), abs(tt3$AUC_logFC) > log2(1.5))
 # Rank the samples based on average rank between the two p-values
 SigSamples <- 
   SigSamples %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
@@ -254,7 +254,7 @@ tt3 <-
   arrange(., avg_rank)
 
 View(tt3)
-# When you actually get a good list of genes, analyse with enrichr and genesetDB
+# When you actually get a good list of genes, analyse with enrichr and genesetDB (Use more strict requirements for these two (e.g. Adj_P_Val < 0.01, abs(logFC > 1) than you do for the following RectomePA and GoSeq stuff)
 ```
 
 
@@ -293,7 +293,7 @@ GOseq does pathway analysis, adjusted by gene length (which is quite important),
 ### Also look at your significant gene list on enrichr.
 
 
-
+# Probably filter this stuff more strictly (as above), but that's a problem for another day
 ```{r ReactomePA Analysis from Mik's Slides, fig.height=3, fig.width=8}
 # Load packages
 library(ReactomePA)
@@ -318,20 +318,36 @@ barplot(dasat_rPAoverrep, showCategory=11, font.size=8)
 dotplot(dasat_rPAoverrep, showCategory=11, font.size=8)
 ```
 
+# Find all the genes, note which ones are significant. tt3 is all genes, assign those that are in SignificantGenes as 1's, everything else as 0
 
+#### AllGenes should be created from tt3, not SigSamples/Top2100Genes. You Need Both!.
 
 ```{r GoSeq Analysis}
 ## Load packages
 library(reactome.db)
 library(goseq)
 library(gplots)
-## Set random set
+## Set random seed
 set.seed(321)
 
-# Look at the existing file that you'll use again here
-View(Top400GenesEntrez)
+# Add Entrez ID's to the SigSamples samples (top2100). These will become the 1's.
+Top2100Genes <- as.character(na.omit(SigSamples$Gene_Symbol))
+# Add Entrez ID's
+hs <- org.Hs.eg.db
+Top2100GenesEntrez <- select(hs, 
+                            keys = Top2100Genes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
 
-## Get pathway names, and extract human-only pathways
+# Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
+tt3Genes <- as.character(na.omit(tt3$Gene_Symbol))
+# Add Entrez ID's
+tt3GenesEntrez <- select(hs, 
+                            keys = tt3Genes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
+
+#Get pathway names, and extract human-only pathways
 rName <- as.list(reactomePATHNAME2ID)
 rName <- rName[grep("Homo sapiens", names(rName))]
 ## List of all reactome pathways, and entrez IDs of the genes they contain
@@ -344,22 +360,36 @@ rGenesPath <- lapply(rGenesPath, unique)
 rGeneByPath <- as.list(reactomeEXTID2PATHID)
 ## myGenes is the list of all the genes in your data set (e.g., the rownames of 
 ## your expression matrix): Entrez IDs
-## allGenes is the intersection of the genes from the data set with the human reactome genes
-allGenes <- intersect( Top400GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+## allGenes is the intersection of all the genes from the dataset with the human reactome genes
+allGenes <- intersect( tt3GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
 length(allGenes)
+## sigGenes is the intersection of all the significant genes from the dataset with the human reactome genes
+sigGenes <- intersect( Top2100GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+length(sigGenes)
 
-####### Unsure what's going  on from here #######
 ## sigGenes is the binary list of whether or not the gene was significant.
 ## same length and order as allGenes
-sigGenes <- rep(0, length(allGenes))
-names(sigGenes) <- allGenes
+plotGenes <- rep(0, length(allGenes))
+names(plotGenes) <- allGenes
 
-## Randomly generate significant genes, based on gene length (longer transcripts have higher chance of being significant)
-# DO I NEED TO DO THIS?
-geneLengths <- getlength(allGenes, "hg19", id="knownGene")
-randSig <- which( runif(length(allGenes)) < geneLengths/20000 )
-sigGenes[randSig] <- 1
-sum(sigGenes)
+################# Works up to here #################
+
+# Data frame version (doesn't work, as you can't easily convert a data frame back to a named binary vector while keeping the names)
+plotGenes <- as.data.frame(plotGenes)
+significant <- match(Top2100GenesEntrez$ENTREZID, names(plotGenes))
+colnames(plotGenes)[1] <- "sigCol"
+plotGenes$sigCol[significant] <- "1"
+
+# Doesn't work- I'm missing a bit to tell it that "thing" is T/F (also don't know what to do next)
+thing <- which(Top2100GenesEntrez$ENTRxEZID %in% names(plotGenes))
+thing <- as.numeric(thing)
+important <- plotGenes[match(thing, names(plotGenes))] <- 1
+
+# Attempt No. 3(000): (doesn't work, just returns a 1x1 object of value 1)
+pwfGenes <- plotGenes[match(sigGenes, allGenes)] <- 1
+View(pwfGenes)
+
+############### Works after here ###################
 
 ## Figure out which genes are relevant to your data set (some may not be present)
 mt <- match(allGenes, names(rGeneByPath))
@@ -370,15 +400,12 @@ sum(is.na(mt))
 rGeneByPath <- lapply(rGeneByPath[mt], function(x) intersect(x, names(rGenesPath)))
 head(rGeneByPath)
 
-## GOseq analysis
-pwf <- nullp(sigGenes, 'hg19', id = "knownGene", plot.fit=TRUE)
-
+## GOseq analysis- The next important bit that needs to change
+pwf <- nullp(pwfGenes, 'hg19', id = "knownGene", plot.fit=TRUE)
 ## Length-corrected
 goseqReactome <- goseq(pwf, gene2cat = rGeneByPath)
-
 ## Non-length-corrected
 hyperReactome <- goseq(pwf, gene2cat = rGeneByPath, method="Hypergeometric")
-
 ## Adjust p-values
 goseqReactome$adjP <- p.adjust(goseqReactome$over_represented_pvalue, method="fdr")
 hyperReactome$adjP <- p.adjust(hyperReactome$over_represented_pvalue, method="fdr")
