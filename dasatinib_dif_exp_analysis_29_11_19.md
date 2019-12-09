@@ -22,74 +22,20 @@ analysis to see what it’s actually changing
 library(limma)
 library(edgeR)
 library(data.table)
-```
-
-    ## Warning: package 'data.table' was built under R version 3.5.3
-
-``` r
 library(magrittr)
-```
-
-    ## Warning: package 'magrittr' was built under R version 3.5.3
-
-``` r
 library(ggplot2)
-```
-
-    ## Warning: package 'ggplot2' was built under R version 3.5.3
-
-``` r
 library(CePa)
-```
-
-    ## Warning: package 'CePa' was built under R version 3.5.3
-
-``` r
-library(dplyr)
-```
-
-    ## Warning: package 'dplyr' was built under R version 3.5.3
-
-    ## 
-    ## Attaching package: 'dplyr'
-
-    ## The following objects are masked from 'package:data.table':
-    ## 
-    ##     between, first, last
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
-
-``` r
 library(tidyverse)
 ```
 
-    ## Warning: package 'tidyverse' was built under R version 3.5.3
+    ## -- Attaching packages --------------------------------------------------------------------------------- tidyverse 1.3.0 --
 
-    ## -- Attaching packages ------------------------------------------------------------------------------------------------- tidyverse 1.2.1 --
-
-    ## v tibble  2.1.3     v purrr   0.3.3
+    ## v tibble  2.1.3     v dplyr   0.8.3
     ## v tidyr   1.0.0     v stringr 1.4.0
     ## v readr   1.3.1     v forcats 0.4.0
+    ## v purrr   0.3.3
 
-    ## Warning: package 'tibble' was built under R version 3.5.3
-
-    ## Warning: package 'tidyr' was built under R version 3.5.3
-
-    ## Warning: package 'readr' was built under R version 3.5.3
-
-    ## Warning: package 'purrr' was built under R version 3.5.3
-
-    ## Warning: package 'stringr' was built under R version 3.5.3
-
-    ## Warning: package 'forcats' was built under R version 3.5.3
-
-    ## -- Conflicts ---------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts ------------------------------------------------------------------------------------ tidyverse_conflicts() --
     ## x dplyr::between()   masks data.table::between()
     ## x tidyr::extract()   masks magrittr::extract()
     ## x dplyr::filter()    masks stats::filter()
@@ -102,11 +48,6 @@ library(tidyverse)
 
 ``` r
 library(ggbeeswarm)
-```
-
-    ## Warning: package 'ggbeeswarm' was built under R version 3.5.3
-
-``` r
 library(org.Hs.eg.db)
 ```
 
@@ -141,13 +82,12 @@ library(org.Hs.eg.db)
 
     ## The following objects are masked from 'package:base':
     ## 
-    ##     anyDuplicated, append, as.data.frame, basename, cbind, colMeans,
-    ##     colnames, colSums, dirname, do.call, duplicated, eval, evalq,
-    ##     Filter, Find, get, grep, grepl, intersect, is.unsorted, lapply,
-    ##     lengths, Map, mapply, match, mget, order, paste, pmax, pmax.int,
-    ##     pmin, pmin.int, Position, rank, rbind, Reduce, rowMeans, rownames,
-    ##     rowSums, sapply, setdiff, sort, table, tapply, union, unique,
-    ##     unsplit, which, which.max, which.min
+    ##     anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    ##     dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    ##     grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    ##     order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    ##     rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    ##     union, unique, unsplit, which, which.max, which.min
 
     ## Loading required package: Biobase
 
@@ -164,13 +104,13 @@ library(org.Hs.eg.db)
     ## 
     ## Attaching package: 'S4Vectors'
 
-    ## The following object is masked from 'package:tidyr':
-    ## 
-    ##     expand
-
     ## The following objects are masked from 'package:dplyr':
     ## 
     ##     first, rename
+
+    ## The following object is masked from 'package:tidyr':
+    ## 
+    ##     expand
 
     ## The following objects are masked from 'package:data.table':
     ## 
@@ -183,13 +123,13 @@ library(org.Hs.eg.db)
     ## 
     ## Attaching package: 'IRanges'
 
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     reduce
-
     ## The following objects are masked from 'package:dplyr':
     ## 
     ##     collapse, desc, slice
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     reduce
 
     ## The following object is masked from 'package:data.table':
     ## 
@@ -207,6 +147,10 @@ library(org.Hs.eg.db)
     ##     select
 
     ## 
+
+``` r
+library(dplyr)
+```
 
 ``` r
 # Output suppressed cause setDT prints a whole lot of useless stuff
@@ -382,13 +326,23 @@ sum(tt$adj.P.Val<0.01)
 ## Plot log fold-change _versus_ -log(P-value). This graph is the important one, things up the top and spread out are useful associations
 ## (i.e., higher number = lower p-value):
 volcanoplot(fit, coef="HighVsLow")
+
+# Fancier Volcano plot, with lines for adjusted p-value, fold change, and highlighted important samples.
+sigFC = (tt$adj.P.Val < 0.01)  & (abs(tt$logFC) > 1)
+
+volcanoplot(fit, coef="HighVsLow")
+points(tt$logFC[which(sigFC)], 
+       -log10(tt$P.Value[which(sigFC)]), 
+       cex=0.6, col='red', pch=16)
+abline(h = min(-log10(tt$P.Value[which(sigFC)])), lty=2, col='blue')
+abline(v = c(-1,1), lty=2, col='blue')
 ```
 
 ![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Differential%20Expression%20Analysis%20With%20IC50-3.png)<!-- -->
 
 ``` r
 split <- strsplit(rownames(tt),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
-geneNames <- select(org.Hs.eg.db, keys = split, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
+geneNames <- AnnotationDbi::select(org.Hs.eg.db, keys = split, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
 ```
 
     ## 'select()' returned 1:many mapping between keys and columns
@@ -448,7 +402,7 @@ length(split)
 dim(geneNames)
 ```
 
-    ## [1] 56491     3
+    ## [1] 56436     3
 
 ``` r
 # Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
@@ -465,6 +419,7 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## NEXN
     ## LOC148709
     ## MCF2L
+    ## SNHG26
     ## APCDD1L
     ## SPIRE2
     ## GLIPR1
@@ -472,7 +427,7 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## KHK
     ## ZSWIM5
     ## ANKRD33B
-    ## KIAA1211
+    ## CRACD
     ## FASN
     ## TGFB1
     ## APOBEC3C
@@ -506,7 +461,7 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## TIRAP
     ## RAC2
     ## IL7R
-    ## LOC400743
+    ## LINC02783
     ## NNMT
     ## CELF3
     ## DDC
@@ -558,7 +513,7 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## HES6
     ## LINC00911
     ## STX11
-    ## LINC01835
+    ## CLEC4O
     ## EFNA3
     ## PML
     ## MSN
@@ -631,7 +586,6 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## PIK3CD
     ## DOCK2
     ## ADRB2
-    ## LINC01546
     ## CKMT1A
     ## IL32
     ## MANEAL
@@ -654,7 +608,7 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## SAMD9L
     ## PLEKHA2
     ## PSMB8-AS1
-    ## LOC541472
+    ## IL6-AS1
     ## COL18A1
     ## GJC3
     ## VSIR
@@ -669,13 +623,12 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## GADD45G
     ## ETS1
     ## FBXL12
-    ## LINC01094
     ## KCCAT198
     ## C1orf43
     ## APBB1IP
     ## MILR1
     ## INSM2
-    ## AKAP2
+    ## PALM2AKAP2
     ## ADAMTS6
     ## IFI16
     ## PRR15L
@@ -687,7 +640,7 @@ cat(na.omit(tt$symbol[1:300]),sep="\n")
     ## KDM7A
     ## MBNL1
     ## EPHB3
-    ## C5orf56
+    ## IRF1-AS1
     ## CD44
     ## CGB8
     ## FMNL1
@@ -3215,13 +3168,22 @@ sum(tt2$adj.P.Val<0.01)
 ## Plot log fold-change _versus_ -log(P-value). This graph is the important one, things up the top and spread out are useful associations
 ## (i.e., higher number = lower p-value):
 volcanoplot(fit2, coef="HighVsLow")
+
+# Fancier Volcano plot, with lines for adjusted p-value, fold change, and highlighted important samples.
+sigFC2 = (tt2$adj.P.Val < 0.01)  & (abs(tt2$logFC) > 1)
+volcanoplot(fit2, coef="HighVsLow")
+points(tt2$logFC[which(sigFC2)], 
+       -log10(tt2$P.Value[which(sigFC2)]), 
+       cex=0.6, col='red', pch=16)
+abline(h = min(-log10(tt2$P.Value[which(sigFC2)])), lty=2, col='blue')
+abline(v = c(-1,1), lty=2, col='blue')
 ```
 
 ![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Differential%20Expression%20Analysis%20With%20AUC-3.png)<!-- -->
 
 ``` r
 split2 <- strsplit(rownames(tt2),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
-geneNames2 <- select(org.Hs.eg.db, keys = split2, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
+geneNames2 <- AnnotationDbi::select(org.Hs.eg.db, keys = split2, column = c("SYMBOL","GENENAME"), key="ENSEMBL")
 ```
 
     ## 'select()' returned 1:many mapping between keys and columns
@@ -3266,7 +3228,7 @@ setDT(tt2, keep.rownames = TRUE)[]
     ##    ---                 
     ## 56198: -6.504      <NA>
     ## 56199: -6.504      CHP2
-    ## 56200: -6.504 LOC728327
+    ## 56200: -6.504 LINC02667
     ## 56201: -6.504      <NA>
     ## 56202: -6.504      <NA>
 
@@ -3281,7 +3243,7 @@ length(split2)
 dim(geneNames2)
 ```
 
-    ## [1] 56491     3
+    ## [1] 56436     3
 
 ``` r
 # Print the top 300 associated genes. Can then look them up on Enrichr, GeneSetDB, etc
@@ -3297,7 +3259,7 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## PLAU
     ## CAVIN1
     ## SMAD3
-    ## LOC400743
+    ## LINC02783
     ## APCDD1L
     ## IGFBP6
     ## DSE
@@ -3311,9 +3273,9 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## NNMT
     ## LOC100506178
     ## CGB7
-    ## CYR61
+    ## CCN1
     ## NABP1
-    ## LOC105376382
+    ## LINC02657
     ## C10orf55
     ## DLG1
     ## RRAD
@@ -3335,13 +3297,13 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## ANKRD1
     ## LOXL2
     ## PIK3R3
-    ## UTAT33
+    ## MRPS9-AS1
     ## CRIM1
     ## SP100
     ## APCDD1L-DT
     ## GLIS3
     ## PEAR1
-    ## LOC105376603
+    ## LINC02742
     ## CBX8
     ## CGB8
     ## ITCH
@@ -3361,7 +3323,6 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## LINC02004
     ## S100A3
     ## CAV1
-    ## LINC01094
     ## COL7A1
     ## CPA4
     ## MYOSLID
@@ -3387,7 +3348,7 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## IL18
     ## C19orf33
     ## OSMR
-    ## H3F3A
+    ## H3-3A
     ## BCDIN3D
     ## ULK3
     ## KLHL5
@@ -3396,7 +3357,6 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## JPH2
     ## LINC01589
     ## TNIP1
-    ## ITGB1-DT
     ## ZFP36L1
     ## PICART1
     ## MFAP5
@@ -3429,7 +3389,7 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## ENSA
     ## PHF8
     ## NTF4
-    ## PQLC2L
+    ## SLC66A1L
     ## ZC3H10
     ## ADAMTS16
     ## GBP3
@@ -3438,7 +3398,6 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## PSG1
     ## FLNA
     ## TNFAIP2
-    ## LINC00941
     ## NLRP10
     ## DKK3
     ## MAZ
@@ -3480,7 +3439,7 @@ cat(na.omit(tt2$symbol[1:300]),sep="\n")
     ## PPFIA3
     ## CELF3
     ## GLP2R
-    ## LINC01186
+    ## SNHG26
     ## HLA-V
     ## PRCC
     ## COL12A1
@@ -3579,10 +3538,332 @@ tt3 <- mutate(tt3, sign(tt3$IC50_logFC), sign(tt3$AUC_logFC))
 tt3 <- mutate(tt3, sign(tt3$IC50_logFC)*sign(tt3$AUC_logFC))
 # Multiply signs together, keep genes where the result is negative (cause you want two different signs)
 tt3 <- dplyr::rename(tt3, "logFC_Sign" = "sign(tt3$IC50_logFC) * sign(tt3$AUC_logFC)", "IC50_Sign" = "sign(tt3$IC50_logFC)", "AUC_Sign" = "sign(tt3$AUC_logFC)")
-View(tt3)
 # Look at the samples that are potentially important- don't get good results :(
-SigSamples <- filter(tt3, tt3$logFC_Sign == -1, tt3$IC50_Adj_PVal < 0.05)
-View(SigSamples)
+###################### IMPORTANT!!! ######################
+### IF ALL THE DATA IS ACTUALLY -LOG, NOT LN, THEN THE RELATIONSHIP BETWEEN AUC AND IC50(-log) SHOULD BE +VE. THIS MEANS THAT THE SIGN WE'RE LOOKING FOR WILL BE +VE, NOT -VE! FROM HERE, WE'RE ASSUMING THEIR LABELLING IS WRONG! Adding in +ve AUC sign now for SigSamples, genes that are related to susceptibility to dasatinib will have a larger AUC (and theoretically larger "-log" IC50)
+# Coming back to this, 05/12/19
+# Filter based on significance, increased susceptibility to dasatinib, larger log fold change and positive correlation between AUC and "-log" IC50
+SigSamples <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.05, tt3$AUC_Adj_PVal < 0.05, abs(tt3$IC50_logFC) > log2(1.5), abs(tt3$AUC_logFC) > log2(1.5))
+# Rank the samples based on average rank between the two p-values
+SigSamples <- 
+  SigSamples %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
+  mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
+  mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
+  arrange(., avg_rank)
+# Find the top 400 ranked genes, and look them up
+cat(na.omit(SigSamples$Gene_Symbol[1:400]),sep="\n")
+```
+
+    ## IL6
+    ## SERPINE1
+    ## DSE
+    ## APCDD1L
+    ## AXL
+    ## PDLIM7
+    ## SAA1
+    ## FAM222A
+    ## LINC02783
+    ## LOC100506178
+    ## CITED1
+    ## SP100
+    ## GLIPR1
+    ## NNMT
+    ## IGFBP7
+    ## RRAD
+    ## C3
+    ## NABP1
+    ## NEXN
+    ## FASN
+    ## COL7A1
+    ## LINC01111
+    ## LOXL2
+    ## LOC730268
+    ## HNRNPA1P33
+    ## SYP
+    ## LINC02225
+    ## KHK
+    ## SNAPC1
+    ## C7orf65
+    ## FADS3
+    ## RAB3A
+    ## ERAP2
+    ## PLAU
+    ## APCDD1L-DT
+    ## LINC01638
+    ## PSG5
+    ## SMAD3
+    ## TNIP1
+    ## SNHG26
+    ## SP140L
+    ## ANKRD33B
+    ## PIK3R3
+    ## ITGA5
+    ## SAA2
+    ## TNFRSF9
+    ## COL18A1
+    ## HES6
+    ## CAVIN1
+    ## CELF3
+    ## ZSWIM5
+    ## MYOSLID
+    ## ELAVL4
+    ## C1S
+    ## COL8A1
+    ## PRICKLE1
+    ## UGCG
+    ## BNC1
+    ## ADRB2
+    ## ADRA1B
+    ## APOL1
+    ## KLHL5
+    ## MFAP5
+    ## TGFB1
+    ## TGM2
+    ## VSIR
+    ## CGB8
+    ## TIGD3
+    ## CCDC80
+    ## IGFBP6
+    ## ABCA1
+    ## IL31RA
+    ## FLNA
+    ## ALPK2
+    ## IL32
+    ## ADTRP
+    ## XYLB
+    ## CRACD
+    ## RIMKLA
+    ## CHRNB2
+    ## MAML3
+    ## STK17A
+    ## DKK3
+    ## CPA4
+    ## CLEC4O
+    ## MRPS9-AS1
+    ## TRIM5
+    ## IRF1
+    ## C10orf55
+    ## TGFBI
+    ## FSTL1
+    ## JPH2
+    ## LOC148709
+    ## INSYN2B
+    ## APOBEC3C
+    ## LOC101928940
+    ## IL6-AS1
+    ## ZC3H12A
+    ## P3H2
+    ## CDK15
+    ## PPFIA3
+    ## SFTA1P
+    ## TMEM217
+    ## UBQLNL
+    ## PDCD1LG2
+    ## CD44
+    ## PEAR1
+    ## COL4A1
+    ## IL7R
+    ## SERPINB7
+    ## ADAMTS16
+    ## FOSL1
+    ## TNFAIP3
+    ## TAP2
+    ## PTHLH
+    ## GSDME
+    ## MAP3K14
+    ## FZD2
+    ## LINC02004
+    ## LRFN2
+    ## TBC1D2
+    ## NEXN-AS1
+    ## COL12A1
+    ## SVIP
+    ## MILR1
+    ## CGB7
+    ## MYLK
+    ## BTN2A3P
+    ## LOC100506274
+    ## GPR1
+    ## OTUD7A
+    ## ETS1
+    ## SAMD9
+    ## EBI3
+    ## PLIN3
+    ## OAZ3
+    ## AGPAT4
+    ## CAV1
+    ## MRC2
+    ## NLRP10
+    ## LINC02657
+    ## INHBA
+    ## FSTL4
+    ## LINC02057
+    ## IL1B
+    ## CSF1
+    ## CCN1
+    ## SLC16A12
+    ## SEMA7A
+    ## OLR1
+    ## AGBL4
+    ## HRH3
+    ## ITGB1
+    ## HRAT17
+    ## ANKRD1
+    ## MN1
+    ## ADAMTS6
+    ## NPY4R
+    ## GBP3
+    ## LOX
+    ## SAA4
+    ## ZFP36L1
+    ## MCF2L
+    ## GRIN1
+    ## COL4A6
+    ## KRTAP2-3
+    ## EFR3B
+    ## FOXN4
+    ## ATP6V0E2
+    ## TRIM38
+    ## P3H2-AS1
+    ## IFIT3
+    ## LOC100129175
+    ## LINC00601
+    ## PARD6A
+    ## OPRD1
+    ## LOC101929626
+    ## LINC01615
+    ## FXYD5
+    ## LOC101929759
+    ## GLIS3
+    ## BMP1
+    ## IL1A
+    ## ACTBL2
+    ## PSG1
+    ## MAP3K7CL
+    ## GADD45B
+    ## LINC00958
+    ## TRIM6
+    ## PLEKHA2
+    ## TMEM52B
+    ## PPP1R1B
+    ## ARSI
+    ## LINC02742
+    ## NGF
+    ## VSTM1
+    ## TAGLN
+    ## KDM7A
+    ## EFNA3
+    ## IL4I1
+    ## MYL9
+    ## CGB5
+    ## ATP10D
+    ## DAW1
+    ## CKMT1B
+    ## C1R
+    ## SLC18A1
+    ## STXBP5L
+    ## PDZK1IP1
+    ## CDK6
+    ## CLCF1
+    ## FOXL1
+    ## TMEM156
+    ## SP110
+    ## CBX2
+    ## TRIM67
+    ## PSORS1C1
+    ## SEPTIN3
+    ## EHD2
+    ## FILIP1L
+    ## COL4A2
+    ## KCNJ15
+    ## WDR66
+    ## IKBIP
+    ## KCNA7
+    ## DDC
+    ## MMP19
+    ## CD40
+    ## COL5A1
+    ## GJC3
+    ## GPM6B
+    ## LTBP2
+    ## HEG1
+    ## CYTOR
+    ## CNN2
+    ## CRIM1
+    ## LRRC8B
+    ## EGFR-AS1
+    ## GPR176
+    ## PPM1L
+    ## IFIT2
+    ## LRRC26
+    ## LINC00911
+    ## KHDC1L
+    ## ANKRD2
+    ## F3
+    ## ATP8B3
+    ## KDM7A-DT
+    ## BDNF
+    ## EFEMP1
+    ## GLP2R
+    ## IL15RA
+    ## GRIK3
+    ## GOLGA8G
+    ## LINC01303
+    ## CASP8
+    ## TICAM2
+    ## PALM2AKAP2
+    ## DLL4
+    ## ADAMTS12
+    ## INSM2
+    ## CACNA1D
+    ## GJA1
+    ## TRIP6
+    ## C1orf127
+    ## LINC02530
+    ## RAC2
+    ## KLF17
+    ## TINAGL1
+    ## IFIT1
+    ## TFF3
+    ## SBK1
+    ## PTX3
+    ## PSG9
+    ## KRT33B
+    ## RELB
+    ## TMEM145
+    ## PARP14
+    ## RHOU
+    ## TRIM22
+    ## GBP1
+    ## MIR22HG
+    ## CXXC4
+    ## C3orf70
+    ## ISG15
+    ## WFDC21P
+    ## C7orf57
+    ## PSG7
+    ## CPLX2
+    ## PCP4
+    ## APOL2
+    ## NRG1
+    ## CATSPER1
+    ## PDPN
+    ## SCGB1A1
+    ## S100A3
+    ## ZDHHC2
+    ## GAS2
+    ## RRAS2
+    ## MANEAL
+    ## HIF1A-AS3
+    ## STX11
+    ## MAPT
+    ## TBC1D30
+    ## CARMIL3
+    ## COL6A2
+    ## LINC02450
+    ## MAP7D3
+
+``` r
 # Sort based on average significance rank across AUC and IC50 (filter based on significant adj. p values, and consistent signs between the two analysis)
 tt3 <- 
   tt3 %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
@@ -3590,33 +3871,7 @@ tt3 <-
   mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
   arrange(., avg_rank)
 
-head(tt)
-```
-
-    ##                    rn  logFC AveExpr      t   P.Value adj.P.Val     B   symbol
-    ## 1:  ENSG00000139438.5 -1.337  1.8161 -8.596 1.224e-16 4.720e-12 26.92  FAM222A
-    ## 2:  ENSG00000136244.7  2.674 -0.7894  8.554 1.680e-16 4.720e-12 26.62      IL6
-    ## 3: ENSG00000111817.12  1.659  3.7417  8.208 2.171e-15 3.213e-11 24.18      DSE
-    ## 4:  ENSG00000163453.7  2.841  2.2611  8.200 2.287e-15 3.213e-11 24.13   IGFBP7
-    ## 5:  ENSG00000106366.7  2.653  4.2006  7.989 1.054e-14 1.185e-10 22.67 SERPINE1
-    ## 6:  ENSG00000214796.4 -1.805  0.2970 -7.942 1.473e-14 1.380e-10 22.35     <NA>
-
-``` r
-head(tt2)
-```
-
-    ##                   rn logFC AveExpr      t   P.Value adj.P.Val     B   symbol
-    ## 1: ENSG00000136244.7 3.160 -0.7894 10.434 4.508e-23 1.570e-18 41.38      IL6
-    ## 2: ENSG00000167601.7 3.330  4.1406 10.409 5.587e-23 1.570e-18 41.17      AXL
-    ## 3: ENSG00000106366.7 3.255  4.2006 10.155 4.788e-22 8.970e-18 39.10 SERPINE1
-    ## 4: ENSG00000198959.7 3.042  4.8391  9.691 2.245e-20 3.154e-16 35.38     TGM2
-    ## 5: ENSG00000215033.3 2.953 -3.9302  9.662 2.844e-20 3.196e-16 35.15     <NA>
-    ## 6: ENSG00000269652.1 2.027 -5.2807  9.595 4.916e-20 4.605e-16 34.62     <NA>
-
-``` r
-View(tt3)
-
-# When you actually get a good list of genes, analyse with enrichr and genesetDB
+# When you actually get a good list of genes, analyse with enrichr and genesetDB (Use more strict requirements for these two (e.g. Adj_P_Val < 0.01, abs(logFC > 1) than you do for the following RectomePA and GoSeq stuff)
 ```
 
 ``` r
@@ -3649,3 +3904,474 @@ ggplot(data=tt3, mapping=aes(x=AUC_logFC,y=Avg_Exp)) +geom_point()
 ```
 
 ![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Plot%20gene%20expression%20vs%20AUC%20and%20gene%20expression%20vs%20IC50,%20on%20a%20scatter%20plot%20and%20boxplot-4.png)<!-- -->
+
+Looks like either it’s all -logged, or the relationship between ic50 and
+auc is not what we think it
+is.
+
+### Next Steps:
+
+### Find cell lines that are allegedly resistant/susceptible to a drug, and figure out what their IC50’s are- are they high or low when they should be high or low (i.e resistant/susceptible, not neccesarily in that order) Should look up breast cancer cell lines, probably drugs like paclitaxel, doxarubicin, etc.
+
+### Paclitaxel resistant breast cancer cell lines have higher paclitaxel *non log* ic50 values (e.g. 62nM 5 day) than non-resistant cells (e.g. 5 nM 5 day). This looks like it associates with lower AUC: On a dose-response curve, the y axis has % inhibition, and the x axis has concentration of the drug. so, if there’s increased IC50, the concentration at 50% inhibition is further to the right of the graph, and there’s less underneath the curve.
+
+### Then go back to looking at signs (+/-, “dasatinib\_dif\_exp\_analysis\_29\_11\_19”), and trying to figure out what’s associated with different ic50/auc. It might be different to what you think, depending on if your initial assumptions were based on regular or -logged data. From here, find a good list of significantly associated genes.
+
+### Do a volcano plot of your significant genes again, but fancier.
+
+### Work through the stuff in slides 18-36 with your own data (ReactomePA).
+
+### GOseq does pathway analysis, adjusted by gene length (which is quite important), and is available as an r package. This allows you to use r to carry out similar processes as enrichr, but with adjusted data.
+
+### Also look at your significant gene list on enrichr.
+
+# Probably filter this stuff more strictly (as above), but that’s a problem for another day
+
+``` r
+# Load packages
+library(ReactomePA)
+```
+
+    ## 
+
+    ## Registered S3 method overwritten by 'enrichplot':
+    ##   method               from
+    ##   fortify.enrichResult DOSE
+
+    ## ReactomePA v1.30.0  For help: https://guangchuangyu.github.io/ReactomePA
+    ## 
+    ## If you use ReactomePA in published research, please cite:
+    ## Guangchuang Yu, Qing-Yu He. ReactomePA: an R/Bioconductor package for reactome pathway analysis and visualization. Molecular BioSystems 2016, 12(2):477-479
+
+``` r
+library(org.Hs.eg.db)
+
+# Create list of top associated genes
+Top400Genes <- as.character(na.omit(SigSamples$Gene_Symbol[1:400]))
+# Add Entrez ID's
+hs <- org.Hs.eg.db
+Top400GenesEntrez <- select(hs, 
+                            keys = Top400Genes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
+```
+
+    ## 'select()' returned 1:1 mapping between keys and columns
+
+``` r
+# Perform pathway analysis via ReactomePA
+# Gives you a nice table with some useful pathways
+dasat_rPAoverrep <- enrichPathway(gene=Top400GenesEntrez$ENTREZID, organism = "human",
+ pvalueCutoff=0.05, readable=T)
+View(as.data.frame(dasat_rPAoverrep))
+# Visualise these as plots (note that they look weird in the inline output, have to be opened properly)
+barplot(dasat_rPAoverrep, showCategory=11, font.size=8)
+```
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/reactome%20PA%20Analysis%20from%20Miks%20Slides-1.png)<!-- -->
+
+``` r
+dotplot(dasat_rPAoverrep, showCategory=11, font.size=8)
+```
+
+    ## wrong orderBy parameter; set to default `orderBy = "x"`
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/reactome%20PA%20Analysis%20from%20Miks%20Slides-2.png)<!-- -->
+
+# Find all the genes, note which ones are significant. tt3 is all genes, assign those that are significant as 1’s, everything else as 0
+
+``` r
+## Load packages
+library(reactome.db)
+library(goseq)
+```
+
+    ## Loading required package: BiasedUrn
+
+    ## Loading required package: geneLenDataBase
+
+    ## 
+    ## Attaching package: 'geneLenDataBase'
+
+    ## The following object is masked from 'package:S4Vectors':
+    ## 
+    ##     unfactor
+
+``` r
+library(gplots)
+```
+
+    ## 
+    ## Attaching package: 'gplots'
+
+    ## The following object is masked from 'package:IRanges':
+    ## 
+    ##     space
+
+    ## The following object is masked from 'package:S4Vectors':
+    ## 
+    ##     space
+
+    ## The following object is masked from 'package:stats':
+    ## 
+    ##     lowess
+
+``` r
+## Set random seed
+set.seed(321)
+
+# Add Entrez ID's to the SigSamples samples (top2100). These will become the 1's.
+Top2100Genes <- as.character(na.omit(SigSamples$Gene_Symbol))
+# Add Entrez ID's
+hs <- org.Hs.eg.db
+Top2100GenesEntrez <- select(hs, 
+                            keys = Top2100Genes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
+```
+
+    ## 'select()' returned many:1 mapping between keys and columns
+
+``` r
+# Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
+tt3Genes <- as.character(na.omit(tt3$Gene_Symbol))
+# Add Entrez ID's
+tt3GenesEntrez <- select(hs, 
+                            keys = tt3Genes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
+```
+
+    ## 'select()' returned many:many mapping between keys and columns
+
+``` r
+#Get pathway names, and extract human-only pathways
+rName <- as.list(reactomePATHNAME2ID)
+rName <- rName[grep("Homo sapiens", names(rName))]
+## List of all reactome pathways, and entrez IDs of the genes they contain
+rGenes <- as.list(reactomePATHID2EXTID)
+## Extract ONLY the human pathways 
+rGenesPath <- rGenes[match(rName, names(rGenes))]
+## Make sure that each gene is only listed once per pathway
+rGenesPath <- lapply(rGenesPath, unique)
+## Get list of genes, and the pathways they are in.
+rGeneByPath <- as.list(reactomeEXTID2PATHID)
+## allGenes is the intersection of all the genes from the dataset with the human reactome genes
+allGenes <- intersect( tt3GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+length(allGenes)
+```
+
+    ## [1] 10420
+
+``` r
+## sigGenes is the intersection of all the significant genes from the dataset with the human reactome genes
+sigGenes <- intersect( Top2100GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+length(sigGenes)
+```
+
+    ## [1] 784
+
+``` r
+## sigGenes is the binary list of whether or not the gene was significant.
+## same length and order as allGenes
+plotGenes <- rep(0, length(allGenes))
+names(plotGenes) <- allGenes
+
+# Now match the significant and total gene lists
+plotGenes[match(sigGenes, names(plotGenes))] <- 1
+table(plotGenes)
+```
+
+    ## plotGenes
+    ##    0    1 
+    ## 9636  784
+
+``` r
+## Figure out which genes are relevant to your data set (some may not be present)
+mt <- match(allGenes, names(rGeneByPath))
+## Count how many of the reactome genes aren't in your data set
+sum(is.na(mt))
+```
+
+    ## [1] 0
+
+``` r
+## Get genes and pathways relevant to our analysis
+rGeneByPath <- lapply(rGeneByPath[mt], function(x) intersect(x, names(rGenesPath)))
+head(rGeneByPath)
+```
+
+    ## $`3569`
+    ##  [1] "R-HSA-1059683" "R-HSA-110056"  "R-HSA-112409"  "R-HSA-112411" 
+    ##  [5] "R-HSA-1280215" "R-HSA-162582"  "R-HSA-168256"  "R-HSA-2262752"
+    ##  [9] "R-HSA-2559582" "R-HSA-2559583" "R-HSA-381426"  "R-HSA-392499" 
+    ## [13] "R-HSA-449147"  "R-HSA-5683057" "R-HSA-5684996" "R-HSA-597592" 
+    ## [17] "R-HSA-6783589" "R-HSA-6783783" "R-HSA-6785807" "R-HSA-8953897"
+    ## [21] "R-HSA-8957275"
+    ## 
+    ## $`5054`
+    ##  [1] "R-HSA-109582"  "R-HSA-114608"  "R-HSA-1368108" "R-HSA-1474244"
+    ##  [5] "R-HSA-162582"  "R-HSA-170834"  "R-HSA-212436"  "R-HSA-2173793"
+    ##  [9] "R-HSA-2173796" "R-HSA-3000178" "R-HSA-400253"  "R-HSA-73857"  
+    ## [13] "R-HSA-74160"   "R-HSA-75205"   "R-HSA-76002"   "R-HSA-76005"  
+    ## [17] "R-HSA-9006936"
+    ## 
+    ## $`29940`
+    ## [1] "R-HSA-1430728" "R-HSA-1630316" "R-HSA-1793185" "R-HSA-2022923"
+    ## [5] "R-HSA-71387"  
+    ## 
+    ## $`558`
+    ## [1] "R-HSA-162582"  "R-HSA-194138"  "R-HSA-4420097" "R-HSA-9006934"
+    ## 
+    ## $`9260`
+    ## [1] "R-HSA-1266738" "R-HSA-422475"  "R-HSA-8853659"
+    ## 
+    ## $`6288`
+    ##  [1] "R-HSA-1280215" "R-HSA-162582"  "R-HSA-166016"  "R-HSA-166058" 
+    ##  [5] "R-HSA-166166"  "R-HSA-168138"  "R-HSA-168142"  "R-HSA-168164" 
+    ##  [9] "R-HSA-168176"  "R-HSA-168179"  "R-HSA-168181"  "R-HSA-168188" 
+    ## [13] "R-HSA-168249"  "R-HSA-168256"  "R-HSA-168898"  "R-HSA-168928" 
+    ## [17] "R-HSA-181438"  "R-HSA-2173782" "R-HSA-3000471" "R-HSA-372790" 
+    ## [21] "R-HSA-373076"  "R-HSA-375276"  "R-HSA-388396"  "R-HSA-392499" 
+    ## [25] "R-HSA-416476"  "R-HSA-418594"  "R-HSA-444473"  "R-HSA-445989" 
+    ## [29] "R-HSA-446652"  "R-HSA-449147"  "R-HSA-500792"  "R-HSA-5653656"
+    ## [33] "R-HSA-6785807" "R-HSA-879415"  "R-HSA-9020702" "R-HSA-933542" 
+    ## [37] "R-HSA-937061"  "R-HSA-975138"  "R-HSA-975155"  "R-HSA-975871" 
+    ## [41] "R-HSA-977225"
+
+``` r
+## GOseq analysis
+pwf <- nullp(plotGenes, 'hg19', id = "knownGene", plot.fit=TRUE)
+```
+
+    ## Loading hg19 length data...
+
+    ## Warning in pcls(G): initial point very close to some inequality constraints
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/GoSeq%20Analysis%20for%20top%202100%20genes-1.png)<!-- -->
+
+``` r
+## Length-corrected
+goseqReactome <- goseq(pwf, gene2cat = rGeneByPath)
+```
+
+    ## Using manually entered categories.
+
+    ## Calculating the p-values...
+
+``` r
+## Non-length-corrected
+hyperReactome <- goseq(pwf, gene2cat = rGeneByPath, method="Hypergeometric")
+```
+
+    ## Using manually entered categories.
+    ## Calculating the p-values...
+
+``` r
+## Adjust p-values
+goseqReactome$adjP <- p.adjust(goseqReactome$over_represented_pvalue, method="fdr")
+hyperReactome$adjP <- p.adjust(hyperReactome$over_represented_pvalue, method="fdr")
+
+## Using 0.05 as FDR significance threshold.
+venn(list(goseq=goseqReactome$category[goseqReactome$adjP <0.05],
+          hyper=hyperReactome$category[hyperReactome$adjP <0.05]))
+```
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/GoSeq%20Analysis%20for%20top%202100%20genes-2.png)<!-- -->
+
+``` r
+# Look at the list of genes in the venn diagram
+goseqPathways <- filter(goseqReactome, goseqReactome$adjP <0.05)
+View(goseqPathways$category)
+print(goseqPathways$category)
+```
+
+    ##  [1] "R-HSA-1280215" "R-HSA-1474244" "R-HSA-168256"  "R-HSA-913531" 
+    ##  [5] "R-HSA-909733"  "R-HSA-216083"  "R-HSA-6785807" "R-HSA-6783783"
+    ##  [9] "R-HSA-877300"  "R-HSA-2022090" "R-HSA-449147"  "R-HSA-3000178"
+    ## [13] "R-HSA-381426"  "R-HSA-1474228" "R-HSA-1474290" "R-HSA-202733" 
+    ## [17] "R-HSA-1566948" "R-HSA-1442490" "R-HSA-2214320" "R-HSA-1650814"
+    ## [21] "R-HSA-8948216" "R-HSA-8957275" "R-HSA-2243919" "R-HSA-419037" 
+    ## [25] "R-HSA-2129379" "R-HSA-112316"  "R-HSA-500792"  "R-HSA-3000171"
+    ## [29] "R-HSA-6783589" "R-HSA-109582"  "R-HSA-75158"   "R-HSA-8941332"
+    ## [33] "R-HSA-2173782" "R-HSA-6788467" "R-HSA-375165"  "R-HSA-3000157"
+    ## [37] "R-HSA-1296071" "R-HSA-212676"  "R-HSA-373076"  "R-HSA-1236977"
+    ## [41] "R-HSA-5083635" "R-HSA-9014826" "R-HSA-5173214" "R-HSA-444473" 
+    ## [45] "R-HSA-375276"
+
+``` r
+## Load packages
+library(reactome.db)
+library(goseq)
+library(gplots)
+hs <- org.Hs.eg.db
+
+## Play around with the parameters for what's significant
+SigSamplesX <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.05, tt3$AUC_Adj_PVal < 0.05, abs(tt3$IC50_logFC) > log2(2), abs(tt3$AUC_logFC) > log2(2))
+# Rank the samples based on average rank between the two p-values
+SigSamplesX <- 
+  SigSamplesX %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
+  mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
+  mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
+  arrange(., avg_rank)
+
+# Add Entrez ID's to the SigSamples samples. These will become the 1's.
+TopXGenes <- as.character(na.omit(SigSamplesX$Gene_Symbol))
+TopXGenesEntrez <- select(hs, 
+                            keys = TopXGenes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
+```
+
+    ## 'select()' returned 1:1 mapping between keys and columns
+
+``` r
+# SAME # Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
+tt3Genes <- as.character(na.omit(tt3$Gene_Symbol))
+tt3GenesEntrez <- select(hs, 
+                            keys = tt3Genes,
+                            columns = c("ENTREZID", "SYMBOL"),
+                            keytype = "SYMBOL")
+```
+
+    ## 'select()' returned many:many mapping between keys and columns
+
+``` r
+# SAME # Get pathway names, and extract human-only pathways
+rName <- as.list(reactomePATHNAME2ID)
+rName <- rName[grep("Homo sapiens", names(rName))]
+rGenes <- as.list(reactomePATHID2EXTID)
+rGenesPath <- rGenes[match(rName, names(rGenes))]
+rGenesPath <- lapply(rGenesPath, unique)
+rGeneByPath <- as.list(reactomeEXTID2PATHID)
+allGenes <- intersect( tt3GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+length(allGenes)
+```
+
+    ## [1] 10420
+
+``` r
+## sigGenesX is the intersection of all the significant genes from the dataset with the human reactome genes
+sigGenesX <- intersect( TopXGenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+length(sigGenesX)
+```
+
+    ## [1] 380
+
+``` r
+## sigGenes is the binary list of whether or not the gene was significant.
+## same length and order as allGenes
+plotGenesX <- rep(0, length(allGenes))
+names(plotGenesX) <- allGenes
+
+# Now match the significant and total gene lists
+plotGenesX[match(sigGenesX, names(plotGenesX))] <- 1
+table(plotGenesX)
+```
+
+    ## plotGenesX
+    ##     0     1 
+    ## 10040   380
+
+``` r
+# SAME ## Figure out which genes are relevant to your data set (some may not be present)
+mt <- match(allGenes, names(rGeneByPath))
+# SAME ## Count how many of the reactome genes aren't in your data set
+sum(is.na(mt))
+```
+
+    ## [1] 0
+
+``` r
+# SAME ## Get genes and pathways relevant to our analysis
+rGeneByPath <- lapply(rGeneByPath[mt], function(x) intersect(x, names(rGenesPath)))
+head(rGeneByPath)
+```
+
+    ## $`3569`
+    ##  [1] "R-HSA-1059683" "R-HSA-110056"  "R-HSA-112409"  "R-HSA-112411" 
+    ##  [5] "R-HSA-1280215" "R-HSA-162582"  "R-HSA-168256"  "R-HSA-2262752"
+    ##  [9] "R-HSA-2559582" "R-HSA-2559583" "R-HSA-381426"  "R-HSA-392499" 
+    ## [13] "R-HSA-449147"  "R-HSA-5683057" "R-HSA-5684996" "R-HSA-597592" 
+    ## [17] "R-HSA-6783589" "R-HSA-6783783" "R-HSA-6785807" "R-HSA-8953897"
+    ## [21] "R-HSA-8957275"
+    ## 
+    ## $`5054`
+    ##  [1] "R-HSA-109582"  "R-HSA-114608"  "R-HSA-1368108" "R-HSA-1474244"
+    ##  [5] "R-HSA-162582"  "R-HSA-170834"  "R-HSA-212436"  "R-HSA-2173793"
+    ##  [9] "R-HSA-2173796" "R-HSA-3000178" "R-HSA-400253"  "R-HSA-73857"  
+    ## [13] "R-HSA-74160"   "R-HSA-75205"   "R-HSA-76002"   "R-HSA-76005"  
+    ## [17] "R-HSA-9006936"
+    ## 
+    ## $`29940`
+    ## [1] "R-HSA-1430728" "R-HSA-1630316" "R-HSA-1793185" "R-HSA-2022923"
+    ## [5] "R-HSA-71387"  
+    ## 
+    ## $`558`
+    ## [1] "R-HSA-162582"  "R-HSA-194138"  "R-HSA-4420097" "R-HSA-9006934"
+    ## 
+    ## $`9260`
+    ## [1] "R-HSA-1266738" "R-HSA-422475"  "R-HSA-8853659"
+    ## 
+    ## $`6288`
+    ##  [1] "R-HSA-1280215" "R-HSA-162582"  "R-HSA-166016"  "R-HSA-166058" 
+    ##  [5] "R-HSA-166166"  "R-HSA-168138"  "R-HSA-168142"  "R-HSA-168164" 
+    ##  [9] "R-HSA-168176"  "R-HSA-168179"  "R-HSA-168181"  "R-HSA-168188" 
+    ## [13] "R-HSA-168249"  "R-HSA-168256"  "R-HSA-168898"  "R-HSA-168928" 
+    ## [17] "R-HSA-181438"  "R-HSA-2173782" "R-HSA-3000471" "R-HSA-372790" 
+    ## [21] "R-HSA-373076"  "R-HSA-375276"  "R-HSA-388396"  "R-HSA-392499" 
+    ## [25] "R-HSA-416476"  "R-HSA-418594"  "R-HSA-444473"  "R-HSA-445989" 
+    ## [29] "R-HSA-446652"  "R-HSA-449147"  "R-HSA-500792"  "R-HSA-5653656"
+    ## [33] "R-HSA-6785807" "R-HSA-879415"  "R-HSA-9020702" "R-HSA-933542" 
+    ## [37] "R-HSA-937061"  "R-HSA-975138"  "R-HSA-975155"  "R-HSA-975871" 
+    ## [41] "R-HSA-977225"
+
+``` r
+## GOseq analysis
+pwfX <- nullp(plotGenesX, 'hg19', id = "knownGene", plot.fit=TRUE)
+```
+
+    ## Loading hg19 length data...
+
+    ## Warning in pcls(G): initial point very close to some inequality constraints
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/GoSeq%20Analysis%20for%20top%20X%20genes-1.png)<!-- -->
+
+``` r
+## Length-corrected
+goseqReactomeX <- goseq(pwfX, gene2cat = rGeneByPath)
+```
+
+    ## Using manually entered categories.
+
+    ## Calculating the p-values...
+
+``` r
+## Non-length-corrected
+hyperReactomeX <- goseq(pwfX, gene2cat = rGeneByPath, method="Hypergeometric")
+```
+
+    ## Using manually entered categories.
+    ## Calculating the p-values...
+
+``` r
+## Adjust p-values
+goseqReactomeX$adjP <- p.adjust(goseqReactomeX$over_represented_pvalue, method="fdr")
+hyperReactomeX$adjP <- p.adjust(hyperReactomeX$over_represented_pvalue, method="fdr")
+
+## Using 0.05 as FDR significance threshold.
+venn(list(goseq=goseqReactomeX$category[goseqReactomeX$adjP <0.05],
+          hyper=hyperReactomeX$category[hyperReactomeX$adjP <0.05]))
+```
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/GoSeq%20Analysis%20for%20top%20X%20genes-2.png)<!-- -->
+
+``` r
+# Look at the genes in the venn diagram
+goseqPathwaysX <- filter(goseqReactomeX, goseqReactomeX$adjP <0.05)
+View(goseqPathwaysX)
+```
+
+Between the two slightly different lists (different fold changes), gives
+you: ECM, Collagen, Integrin, Interleukin, Interferon, Immune System,
+Cytokine Signalling
