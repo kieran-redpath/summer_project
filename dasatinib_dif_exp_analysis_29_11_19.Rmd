@@ -300,7 +300,7 @@ library(org.Hs.eg.db)
 Top400Genes <- as.character(na.omit(SigSamples$Gene_Symbol[1:400]))
 # Add Entrez ID's
 hs <- org.Hs.eg.db
-Top400GenesEntrez <- select(hs, 
+Top400GenesEntrez <- AnnotationDbi::select(hs, 
                             keys = Top400Genes,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
@@ -317,47 +317,48 @@ dotplot(dasat_rPAoverrep, showCategory=11, font.size=8)
 
 # Find all the genes, note which ones are significant. tt3 is all genes, assign those that are significant as 1's, everything else as 0
 
-```{r GoSeq Analysis for top 2100 genes}
+```{r GoSeq Analysis for top X genes. ACTUALLY USE THIS ONE CAUSE IT'S PROBABLY FILTERED BETTER}
 ## Load packages
 library(reactome.db)
 library(goseq)
 library(gplots)
-## Set random seed
-set.seed(321)
-
-# Add Entrez ID's to the SigSamples samples (top2100). These will become the 1's.
-Top2100Genes <- as.character(na.omit(SigSamples$Gene_Symbol))
-# Add Entrez ID's
 hs <- org.Hs.eg.db
-Top2100GenesEntrez <- select(hs, 
-                            keys = Top2100Genes,
+
+## Play around with the parameters for what's significant
+SigSamples <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.05, tt3$AUC_Adj_PVal < 0.05, abs(tt3$IC50_logFC) > log2(2), abs(tt3$AUC_logFC) > log2(2))
+# Rank the samples based on average rank between the two p-values
+SigSamples <- 
+  SigSamples %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
+  mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
+  mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
+  arrange(., avg_rank)
+
+# Add Entrez ID's to the SigSamples samples. These will become the 1's.
+TopXGenes <- as.character(na.omit(SigSamples$Gene_Symbol))
+TopXGenesEntrez <- AnnotationDbi::select(hs, 
+                            keys = TopXGenes,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
 
-# Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
+# SAME # Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
 tt3Genes <- as.character(na.omit(tt3$Gene_Symbol))
-# Add Entrez ID's
-tt3GenesEntrez <- select(hs, 
+tt3GenesEntrez <- AnnotationDbi::select(hs, 
                             keys = tt3Genes,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
 
-#Get pathway names, and extract human-only pathways
+# SAME # Get pathway names, and extract human-only pathways
 rName <- as.list(reactomePATHNAME2ID)
 rName <- rName[grep("Homo sapiens", names(rName))]
-## List of all reactome pathways, and entrez IDs of the genes they contain
 rGenes <- as.list(reactomePATHID2EXTID)
-## Extract ONLY the human pathways 
 rGenesPath <- rGenes[match(rName, names(rGenes))]
-## Make sure that each gene is only listed once per pathway
 rGenesPath <- lapply(rGenesPath, unique)
-## Get list of genes, and the pathways they are in.
 rGeneByPath <- as.list(reactomeEXTID2PATHID)
-## allGenes is the intersection of all the genes from the dataset with the human reactome genes
 allGenes <- intersect( tt3GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
 length(allGenes)
-## sigGenes is the intersection of all the significant genes from the dataset with the human reactome genes
-sigGenes <- intersect( Top2100GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+
+## sigGenesX is the intersection of all the significant genes from the dataset with the human reactome genes
+sigGenes <- intersect( TopXGenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
 length(sigGenes)
 
 ## sigGenes is the binary list of whether or not the gene was significant.
@@ -369,12 +370,11 @@ names(plotGenes) <- allGenes
 plotGenes[match(sigGenes, names(plotGenes))] <- 1
 table(plotGenes)
 
-## Figure out which genes are relevant to your data set (some may not be present)
+# SAME ## Figure out which genes are relevant to your data set (some may not be present)
 mt <- match(allGenes, names(rGeneByPath))
-## Count how many of the reactome genes aren't in your data set
+# SAME ## Count how many of the reactome genes aren't in your data set
 sum(is.na(mt))
-
-## Get genes and pathways relevant to our analysis
+# SAME ## Get genes and pathways relevant to our analysis
 rGeneByPath <- lapply(rGeneByPath[mt], function(x) intersect(x, names(rGenesPath)))
 head(rGeneByPath)
 
@@ -391,92 +391,79 @@ hyperReactome$adjP <- p.adjust(hyperReactome$over_represented_pvalue, method="fd
 ## Using 0.05 as FDR significance threshold.
 venn(list(goseq=goseqReactome$category[goseqReactome$adjP <0.05],
           hyper=hyperReactome$category[hyperReactome$adjP <0.05]))
-# Look at the list of genes in the venn diagram
-goseqPathways <- filter(goseqReactome, goseqReactome$adjP <0.05)
-View(goseqPathways$category)
-print(goseqPathways$category)
-```
-
-
-
-```{r GoSeq Analysis for top X genes}
-## Load packages
-library(reactome.db)
-library(goseq)
-library(gplots)
-hs <- org.Hs.eg.db
-
-## Play around with the parameters for what's significant
-SigSamplesX <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.05, tt3$AUC_Adj_PVal < 0.05, abs(tt3$IC50_logFC) > log2(2), abs(tt3$AUC_logFC) > log2(2))
-# Rank the samples based on average rank between the two p-values
-SigSamplesX <- 
-  SigSamplesX %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
-  mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
-  mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
-  arrange(., avg_rank)
-
-# Add Entrez ID's to the SigSamples samples. These will become the 1's.
-TopXGenes <- as.character(na.omit(SigSamplesX$Gene_Symbol))
-TopXGenesEntrez <- select(hs, 
-                            keys = TopXGenes,
-                            columns = c("ENTREZID", "SYMBOL"),
-                            keytype = "SYMBOL")
-
-# SAME # Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
-tt3Genes <- as.character(na.omit(tt3$Gene_Symbol))
-tt3GenesEntrez <- select(hs, 
-                            keys = tt3Genes,
-                            columns = c("ENTREZID", "SYMBOL"),
-                            keytype = "SYMBOL")
-
-# SAME # Get pathway names, and extract human-only pathways
-rName <- as.list(reactomePATHNAME2ID)
-rName <- rName[grep("Homo sapiens", names(rName))]
-rGenes <- as.list(reactomePATHID2EXTID)
-rGenesPath <- rGenes[match(rName, names(rGenes))]
-rGenesPath <- lapply(rGenesPath, unique)
-rGeneByPath <- as.list(reactomeEXTID2PATHID)
-allGenes <- intersect( tt3GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
-length(allGenes)
-
-## sigGenesX is the intersection of all the significant genes from the dataset with the human reactome genes
-sigGenesX <- intersect( TopXGenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
-length(sigGenesX)
-
-## sigGenes is the binary list of whether or not the gene was significant.
-## same length and order as allGenes
-plotGenesX <- rep(0, length(allGenes))
-names(plotGenesX) <- allGenes
-
-# Now match the significant and total gene lists
-plotGenesX[match(sigGenesX, names(plotGenesX))] <- 1
-table(plotGenesX)
-
-# SAME ## Figure out which genes are relevant to your data set (some may not be present)
-mt <- match(allGenes, names(rGeneByPath))
-# SAME ## Count how many of the reactome genes aren't in your data set
-sum(is.na(mt))
-# SAME ## Get genes and pathways relevant to our analysis
-rGeneByPath <- lapply(rGeneByPath[mt], function(x) intersect(x, names(rGenesPath)))
-head(rGeneByPath)
-
-## GOseq analysis
-pwfX <- nullp(plotGenesX, 'hg19', id = "knownGene", plot.fit=TRUE)
-## Length-corrected
-goseqReactomeX <- goseq(pwfX, gene2cat = rGeneByPath)
-## Non-length-corrected
-hyperReactomeX <- goseq(pwfX, gene2cat = rGeneByPath, method="Hypergeometric")
-## Adjust p-values
-goseqReactomeX$adjP <- p.adjust(goseqReactomeX$over_represented_pvalue, method="fdr")
-hyperReactomeX$adjP <- p.adjust(hyperReactomeX$over_represented_pvalue, method="fdr")
-
-## Using 0.05 as FDR significance threshold.
-venn(list(goseq=goseqReactomeX$category[goseqReactomeX$adjP <0.05],
-          hyper=hyperReactomeX$category[hyperReactomeX$adjP <0.05]))
 # Look at the genes in the venn diagram
-goseqPathwaysX <- filter(goseqReactomeX, goseqReactomeX$adjP <0.05)
-View(goseqPathwaysX)
+goseqPathways <- filter(goseqReactome, goseqReactome$adjP <0.05)
+View(goseqPathways)
+
+# Add Pathway info
+rPathName <- as.list(reactomePATHID2NAME)
+goseqPathways$Pathway <- gsub("Homo sapiens: ", "", rPathName[match(goseqPathways$category, names(rPathName))])
 ```
 
-Between the two slightly different lists (different fold changes), gives you:
-ECM, Collagen, Integrin, Interleukin, Interferon, Immune System, Cytokine Signalling
+# Extract genes from goseqPathways
+
+```{r Data wrangling and heatmaps}
+# Make heatmaps for the top pathways and the genes involved from your data (e.g. 45 in ECM organisation)
+# To do this:
+# match entrez ID's from "goseqPathwaysX" stuff to ensembl ID's from expDat, to get the expression data
+# extract the genes, their names, and match them to expDat.
+# Then make a heatmap (STAT 435 slides)
+
+# Create a dataframe with gene symbol, entrez ID, and ensembl ID, for easy matching of all genes
+GeneLabelTool <- dplyr::pull(tt3, Gene_Symbol)
+# Add Entrez ID's
+GeneLabelTool <- AnnotationDbi::select(hs,
+                                       keys = GeneLabelTool,
+                                       columns = c("ENSEMBL", "ENTREZID", "SYMBOL"),
+                                       keytype = "SYMBOL")
+ 
+# Create a list of all the significant genes for each goseq pathway
+genesinPaths <-list()
+for(i in 1:nrow(goseqPathways)){
+  genesinPaths[[i]] <- rGenesPath[match(goseqPathways$category[i], names(rGenesPath))] %>% 
+    .[[1]] %>% 
+    intersect(., rownames(pwf)[pwf$DEgenes==1])
+}
+
+# convert first list element from entrez ids to symbols like this (as an example):
+# GeneLabelTool$SYMBOL[na.omit(match(genesinPaths[[1]], GeneLabelTool$ENTREZID))]
+
+# This converts *all* the list elements from entrez ID to symbols, and you can then concenate it seperately
+symbolsinPaths <- lapply(genesinPaths, function(x) GeneLabelTool$SYMBOL[na.omit(match(x, GeneLabelTool$ENTREZID))] )
+
+# Concenate these for ease of reading
+genesStick <- lapply(symbolsinPaths, function(x) paste0(x, collapse="::", sep="")) %>% unlist()
+
+# Add these genes as a column on goseqPathways
+goseqPathways$DEgenesInCat <- genesStick
+```
+
+```{r Find expression data and make a heatmap}
+
+# Convert gene names using GeneLabelTool, and find the expression data from expData
+
+
+# Finally, incorporate this gene expression information into a heatmap, as in STAT435
+# xx should be a numeric matrix of the expression data
+
+heatmap.2(xx,trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),keysize=1,
+ labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)),key=F)
+
+yy<-svd(xx)
+attach(yy)
+names(yy)
+
+heatmap.2(u%*%diag(d)%*%t(v),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
+ labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)),key=F)
+
+heatmap.2(d[1]*u[,1]%*%t(v[,1]),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
+ labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)),key=F)
+
+heatmap.2(u[,1:2]%*%diag(d[1:2])%*%t(v[,1:2]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
+ col=greenred(50),labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)))
+
+heatmap.2(u[,1:3]%*%diag(d[1:3])%*%t(v[,1:3]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
+ col=greenred(50),labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)))
+```
+
+
