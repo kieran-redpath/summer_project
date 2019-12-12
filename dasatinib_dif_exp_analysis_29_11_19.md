@@ -28,14 +28,14 @@ library(CePa)
 library(tidyverse)
 ```
 
-    ## -- Attaching packages --------------------------------------------------------------------------------- tidyverse 1.3.0 --
+    ## -- Attaching packages -------------------------------------------------------------------------------------- tidyverse 1.3.0 --
 
     ## v tibble  2.1.3     v dplyr   0.8.3
     ## v tidyr   1.0.0     v stringr 1.4.0
     ## v readr   1.3.1     v forcats 0.4.0
     ## v purrr   0.3.3
 
-    ## -- Conflicts ------------------------------------------------------------------------------------ tidyverse_conflicts() --
+    ## -- Conflicts ----------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::between()   masks data.table::between()
     ## x tidyr::extract()   masks magrittr::extract()
     ## x dplyr::filter()    masks stats::filter()
@@ -159,13 +159,13 @@ ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 logExpDat <- log(ccleExpData + 0.5)
 dge <- DGEList(counts=ccleExpData)
 dge <- calcNormFactors(dge)
-v <- voom(dge, plot=TRUE)
+dge_voom <- voom(dge, plot=TRUE)
 ```
 
 ![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Create%20the%20first%20big%20file%20to%20use-1.png)<!-- -->
 
 ``` r
-expDat <- v$E
+expDat <- dge_voom$E
 
 # GDSC2 Processing (from old document)
 GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
@@ -3950,7 +3950,7 @@ library(org.Hs.eg.db)
 Top400Genes <- as.character(na.omit(SigSamples$Gene_Symbol[1:400]))
 # Add Entrez ID's
 hs <- org.Hs.eg.db
-Top400GenesEntrez <- select(hs, 
+Top400GenesEntrez <- AnnotationDbi::select(hs, 
                             keys = Top400Genes,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
@@ -4017,207 +4017,20 @@ library(gplots)
     ##     lowess
 
 ``` r
-## Set random seed
-set.seed(321)
-
-# Add Entrez ID's to the SigSamples samples (top2100). These will become the 1's.
-Top2100Genes <- as.character(na.omit(SigSamples$Gene_Symbol))
-# Add Entrez ID's
-hs <- org.Hs.eg.db
-Top2100GenesEntrez <- select(hs, 
-                            keys = Top2100Genes,
-                            columns = c("ENTREZID", "SYMBOL"),
-                            keytype = "SYMBOL")
-```
-
-    ## 'select()' returned many:1 mapping between keys and columns
-
-``` r
-# Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
-tt3Genes <- as.character(na.omit(tt3$Gene_Symbol))
-# Add Entrez ID's
-tt3GenesEntrez <- select(hs, 
-                            keys = tt3Genes,
-                            columns = c("ENTREZID", "SYMBOL"),
-                            keytype = "SYMBOL")
-```
-
-    ## 'select()' returned many:many mapping between keys and columns
-
-``` r
-#Get pathway names, and extract human-only pathways
-rName <- as.list(reactomePATHNAME2ID)
-rName <- rName[grep("Homo sapiens", names(rName))]
-## List of all reactome pathways, and entrez IDs of the genes they contain
-rGenes <- as.list(reactomePATHID2EXTID)
-## Extract ONLY the human pathways 
-rGenesPath <- rGenes[match(rName, names(rGenes))]
-## Make sure that each gene is only listed once per pathway
-rGenesPath <- lapply(rGenesPath, unique)
-## Get list of genes, and the pathways they are in.
-rGeneByPath <- as.list(reactomeEXTID2PATHID)
-## allGenes is the intersection of all the genes from the dataset with the human reactome genes
-allGenes <- intersect( tt3GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
-length(allGenes)
-```
-
-    ## [1] 10420
-
-``` r
-## sigGenes is the intersection of all the significant genes from the dataset with the human reactome genes
-sigGenes <- intersect( Top2100GenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
-length(sigGenes)
-```
-
-    ## [1] 784
-
-``` r
-## sigGenes is the binary list of whether or not the gene was significant.
-## same length and order as allGenes
-plotGenes <- rep(0, length(allGenes))
-names(plotGenes) <- allGenes
-
-# Now match the significant and total gene lists
-plotGenes[match(sigGenes, names(plotGenes))] <- 1
-table(plotGenes)
-```
-
-    ## plotGenes
-    ##    0    1 
-    ## 9636  784
-
-``` r
-## Figure out which genes are relevant to your data set (some may not be present)
-mt <- match(allGenes, names(rGeneByPath))
-## Count how many of the reactome genes aren't in your data set
-sum(is.na(mt))
-```
-
-    ## [1] 0
-
-``` r
-## Get genes and pathways relevant to our analysis
-rGeneByPath <- lapply(rGeneByPath[mt], function(x) intersect(x, names(rGenesPath)))
-head(rGeneByPath)
-```
-
-    ## $`3569`
-    ##  [1] "R-HSA-1059683" "R-HSA-110056"  "R-HSA-112409"  "R-HSA-112411" 
-    ##  [5] "R-HSA-1280215" "R-HSA-162582"  "R-HSA-168256"  "R-HSA-2262752"
-    ##  [9] "R-HSA-2559582" "R-HSA-2559583" "R-HSA-381426"  "R-HSA-392499" 
-    ## [13] "R-HSA-449147"  "R-HSA-5683057" "R-HSA-5684996" "R-HSA-597592" 
-    ## [17] "R-HSA-6783589" "R-HSA-6783783" "R-HSA-6785807" "R-HSA-8953897"
-    ## [21] "R-HSA-8957275"
-    ## 
-    ## $`5054`
-    ##  [1] "R-HSA-109582"  "R-HSA-114608"  "R-HSA-1368108" "R-HSA-1474244"
-    ##  [5] "R-HSA-162582"  "R-HSA-170834"  "R-HSA-212436"  "R-HSA-2173793"
-    ##  [9] "R-HSA-2173796" "R-HSA-3000178" "R-HSA-400253"  "R-HSA-73857"  
-    ## [13] "R-HSA-74160"   "R-HSA-75205"   "R-HSA-76002"   "R-HSA-76005"  
-    ## [17] "R-HSA-9006936"
-    ## 
-    ## $`29940`
-    ## [1] "R-HSA-1430728" "R-HSA-1630316" "R-HSA-1793185" "R-HSA-2022923"
-    ## [5] "R-HSA-71387"  
-    ## 
-    ## $`558`
-    ## [1] "R-HSA-162582"  "R-HSA-194138"  "R-HSA-4420097" "R-HSA-9006934"
-    ## 
-    ## $`9260`
-    ## [1] "R-HSA-1266738" "R-HSA-422475"  "R-HSA-8853659"
-    ## 
-    ## $`6288`
-    ##  [1] "R-HSA-1280215" "R-HSA-162582"  "R-HSA-166016"  "R-HSA-166058" 
-    ##  [5] "R-HSA-166166"  "R-HSA-168138"  "R-HSA-168142"  "R-HSA-168164" 
-    ##  [9] "R-HSA-168176"  "R-HSA-168179"  "R-HSA-168181"  "R-HSA-168188" 
-    ## [13] "R-HSA-168249"  "R-HSA-168256"  "R-HSA-168898"  "R-HSA-168928" 
-    ## [17] "R-HSA-181438"  "R-HSA-2173782" "R-HSA-3000471" "R-HSA-372790" 
-    ## [21] "R-HSA-373076"  "R-HSA-375276"  "R-HSA-388396"  "R-HSA-392499" 
-    ## [25] "R-HSA-416476"  "R-HSA-418594"  "R-HSA-444473"  "R-HSA-445989" 
-    ## [29] "R-HSA-446652"  "R-HSA-449147"  "R-HSA-500792"  "R-HSA-5653656"
-    ## [33] "R-HSA-6785807" "R-HSA-879415"  "R-HSA-9020702" "R-HSA-933542" 
-    ## [37] "R-HSA-937061"  "R-HSA-975138"  "R-HSA-975155"  "R-HSA-975871" 
-    ## [41] "R-HSA-977225"
-
-``` r
-## GOseq analysis
-pwf <- nullp(plotGenes, 'hg19', id = "knownGene", plot.fit=TRUE)
-```
-
-    ## Loading hg19 length data...
-
-    ## Warning in pcls(G): initial point very close to some inequality constraints
-
-![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/GoSeq%20Analysis%20for%20top%202100%20genes-1.png)<!-- -->
-
-``` r
-## Length-corrected
-goseqReactome <- goseq(pwf, gene2cat = rGeneByPath)
-```
-
-    ## Using manually entered categories.
-
-    ## Calculating the p-values...
-
-``` r
-## Non-length-corrected
-hyperReactome <- goseq(pwf, gene2cat = rGeneByPath, method="Hypergeometric")
-```
-
-    ## Using manually entered categories.
-    ## Calculating the p-values...
-
-``` r
-## Adjust p-values
-goseqReactome$adjP <- p.adjust(goseqReactome$over_represented_pvalue, method="fdr")
-hyperReactome$adjP <- p.adjust(hyperReactome$over_represented_pvalue, method="fdr")
-
-## Using 0.05 as FDR significance threshold.
-venn(list(goseq=goseqReactome$category[goseqReactome$adjP <0.05],
-          hyper=hyperReactome$category[hyperReactome$adjP <0.05]))
-```
-
-![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/GoSeq%20Analysis%20for%20top%202100%20genes-2.png)<!-- -->
-
-``` r
-# Look at the list of genes in the venn diagram
-goseqPathways <- filter(goseqReactome, goseqReactome$adjP <0.05)
-View(goseqPathways$category)
-print(goseqPathways$category)
-```
-
-    ##  [1] "R-HSA-1280215" "R-HSA-1474244" "R-HSA-168256"  "R-HSA-913531" 
-    ##  [5] "R-HSA-909733"  "R-HSA-216083"  "R-HSA-6785807" "R-HSA-6783783"
-    ##  [9] "R-HSA-877300"  "R-HSA-2022090" "R-HSA-449147"  "R-HSA-3000178"
-    ## [13] "R-HSA-381426"  "R-HSA-1474228" "R-HSA-1474290" "R-HSA-202733" 
-    ## [17] "R-HSA-1566948" "R-HSA-1442490" "R-HSA-2214320" "R-HSA-1650814"
-    ## [21] "R-HSA-8948216" "R-HSA-8957275" "R-HSA-2243919" "R-HSA-419037" 
-    ## [25] "R-HSA-2129379" "R-HSA-112316"  "R-HSA-500792"  "R-HSA-3000171"
-    ## [29] "R-HSA-6783589" "R-HSA-109582"  "R-HSA-75158"   "R-HSA-8941332"
-    ## [33] "R-HSA-2173782" "R-HSA-6788467" "R-HSA-375165"  "R-HSA-3000157"
-    ## [37] "R-HSA-1296071" "R-HSA-212676"  "R-HSA-373076"  "R-HSA-1236977"
-    ## [41] "R-HSA-5083635" "R-HSA-9014826" "R-HSA-5173214" "R-HSA-444473" 
-    ## [45] "R-HSA-375276"
-
-``` r
-## Load packages
-library(reactome.db)
-library(goseq)
-library(gplots)
 hs <- org.Hs.eg.db
 
 ## Play around with the parameters for what's significant
-SigSamplesX <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.05, tt3$AUC_Adj_PVal < 0.05, abs(tt3$IC50_logFC) > log2(2), abs(tt3$AUC_logFC) > log2(2))
+SigSamples <- filter(tt3, tt3$logFC_Sign == 1, tt3$IC50_Adj_PVal < 0.05, tt3$AUC_Adj_PVal < 0.05, abs(tt3$IC50_logFC) > log2(2), abs(tt3$AUC_logFC) > log2(2))
 # Rank the samples based on average rank between the two p-values
-SigSamplesX <- 
-  SigSamplesX %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
+SigSamples <- 
+  SigSamples %>% mutate(., rank_ic50=rank(IC50_Adj_PVal)) %>%
   mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
   mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
   arrange(., avg_rank)
 
 # Add Entrez ID's to the SigSamples samples. These will become the 1's.
-TopXGenes <- as.character(na.omit(SigSamplesX$Gene_Symbol))
-TopXGenesEntrez <- select(hs, 
+TopXGenes <- as.character(na.omit(SigSamples$Gene_Symbol))
+TopXGenesEntrez <- AnnotationDbi::select(hs, 
                             keys = TopXGenes,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
@@ -4228,7 +4041,7 @@ TopXGenesEntrez <- select(hs,
 ``` r
 # SAME # Do something similar to all the genes, from tt3. This will give you the 0's (those that aren't 1's).
 tt3Genes <- as.character(na.omit(tt3$Gene_Symbol))
-tt3GenesEntrez <- select(hs, 
+tt3GenesEntrez <- AnnotationDbi::select(hs, 
                             keys = tt3Genes,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
@@ -4252,8 +4065,8 @@ length(allGenes)
 
 ``` r
 ## sigGenesX is the intersection of all the significant genes from the dataset with the human reactome genes
-sigGenesX <- intersect( TopXGenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
-length(sigGenesX)
+sigGenes <- intersect( TopXGenesEntrez$ENTREZID, unique(unlist(rGenesPath)) )
+length(sigGenes)
 ```
 
     ## [1] 380
@@ -4261,15 +4074,15 @@ length(sigGenesX)
 ``` r
 ## sigGenes is the binary list of whether or not the gene was significant.
 ## same length and order as allGenes
-plotGenesX <- rep(0, length(allGenes))
-names(plotGenesX) <- allGenes
+plotGenes <- rep(0, length(allGenes))
+names(plotGenes) <- allGenes
 
 # Now match the significant and total gene lists
-plotGenesX[match(sigGenesX, names(plotGenesX))] <- 1
-table(plotGenesX)
+plotGenes[match(sigGenes, names(plotGenes))] <- 1
+table(plotGenes)
 ```
 
-    ## plotGenesX
+    ## plotGenes
     ##     0     1 
     ## 10040   380
 
@@ -4328,7 +4141,7 @@ head(rGeneByPath)
 
 ``` r
 ## GOseq analysis
-pwfX <- nullp(plotGenesX, 'hg19', id = "knownGene", plot.fit=TRUE)
+pwf <- nullp(plotGenes, 'hg19', id = "knownGene", plot.fit=TRUE)
 ```
 
     ## Loading hg19 length data...
@@ -4339,7 +4152,7 @@ pwfX <- nullp(plotGenesX, 'hg19', id = "knownGene", plot.fit=TRUE)
 
 ``` r
 ## Length-corrected
-goseqReactomeX <- goseq(pwfX, gene2cat = rGeneByPath)
+goseqReactome <- goseq(pwf, gene2cat = rGeneByPath)
 ```
 
     ## Using manually entered categories.
@@ -4348,7 +4161,7 @@ goseqReactomeX <- goseq(pwfX, gene2cat = rGeneByPath)
 
 ``` r
 ## Non-length-corrected
-hyperReactomeX <- goseq(pwfX, gene2cat = rGeneByPath, method="Hypergeometric")
+hyperReactome <- goseq(pwf, gene2cat = rGeneByPath, method="Hypergeometric")
 ```
 
     ## Using manually entered categories.
@@ -4356,22 +4169,157 @@ hyperReactomeX <- goseq(pwfX, gene2cat = rGeneByPath, method="Hypergeometric")
 
 ``` r
 ## Adjust p-values
-goseqReactomeX$adjP <- p.adjust(goseqReactomeX$over_represented_pvalue, method="fdr")
-hyperReactomeX$adjP <- p.adjust(hyperReactomeX$over_represented_pvalue, method="fdr")
+goseqReactome$adjP <- p.adjust(goseqReactome$over_represented_pvalue, method="fdr")
+hyperReactome$adjP <- p.adjust(hyperReactome$over_represented_pvalue, method="fdr")
 
 ## Using 0.05 as FDR significance threshold.
-venn(list(goseq=goseqReactomeX$category[goseqReactomeX$adjP <0.05],
-          hyper=hyperReactomeX$category[hyperReactomeX$adjP <0.05]))
+venn(list(goseq=goseqReactome$category[goseqReactome$adjP <0.05],
+          hyper=hyperReactome$category[hyperReactome$adjP <0.05]))
 ```
 
 ![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/GoSeq%20Analysis%20for%20top%20X%20genes-2.png)<!-- -->
 
 ``` r
 # Look at the genes in the venn diagram
-goseqPathwaysX <- filter(goseqReactomeX, goseqReactomeX$adjP <0.05)
-View(goseqPathwaysX)
+goseqPathways <- filter(goseqReactome, goseqReactome$adjP <0.05)
+View(goseqPathways)
+
+# Add Pathway info
+rPathName <- as.list(reactomePATHID2NAME)
+goseqPathways$Pathway <- gsub("Homo sapiens: ", "", rPathName[match(goseqPathways$category, names(rPathName))])
 ```
 
-Between the two slightly different lists (different fold changes), gives
-you: ECM, Collagen, Integrin, Interleukin, Interferon, Immune System,
-Cytokine Signalling
+# Extract genes from goseqPathways
+
+``` r
+# Make heatmaps for the top pathways and the genes involved from your data (e.g. 45 in ECM organisation)
+# To do this:
+# match entrez ID's from "goseqPathwaysX" stuff to ensembl ID's from expDat, to get the expression data
+# extract the genes, their names, and match them to expDat.
+# Then make a heatmap (STAT 435 slides)
+
+# Create a dataframe with gene symbol, entrez ID, and ensembl ID, for easy matching of all genes
+GeneLabelTool <- dplyr::pull(tt3, Gene_Symbol)
+# Add Entrez ID's
+GeneLabelTool <- AnnotationDbi::select(hs,
+                                       keys = GeneLabelTool,
+                                       columns = c("ENSEMBL", "ENTREZID", "SYMBOL"),
+                                       keytype = "SYMBOL")
+```
+
+    ## 'select()' returned many:many mapping between keys and columns
+
+``` r
+# Create a list of all the significant genes for each goseq pathway
+genesinPaths <-list()
+for(i in 1:nrow(goseqPathways)){
+  genesinPaths[[i]] <- rGenesPath[match(goseqPathways$category[i], names(rGenesPath))] %>% 
+    .[[1]] %>% 
+    intersect(., rownames(pwf)[pwf$DEgenes==1])
+}
+
+# convert first list element from entrez ids to symbols like this (as an example):
+# GeneLabelTool$SYMBOL[na.omit(match(genesinPaths[[1]], GeneLabelTool$ENTREZID))]
+
+# This converts *all* the list elements from entrez ID to symbols, and you can then concenate it seperately
+symbolsinPaths <- lapply(genesinPaths, function(x) GeneLabelTool$SYMBOL[na.omit(match(x, GeneLabelTool$ENTREZID))] )
+
+# Concenate these for ease of reading
+genesStick <- lapply(symbolsinPaths, function(x) paste0(x, collapse="::", sep="")) %>% unlist()
+
+# Add these genes as a column on goseqPathways
+goseqPathways$DEgenesInCat <- genesStick
+```
+
+``` r
+# Convert gene names to ensembl ID's using GeneLabelTool, and find the expression data from expData
+ensginPaths <- lapply(genesinPaths, function(x) GeneLabelTool$ENSEMBL[na.omit(match(x, GeneLabelTool$ENTREZID))] )
+# Standardise rownames between expDat and ensginPaths
+rownames(expDat) <- strsplit(rownames(expDat),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
+# subset so you've only got the expDat samples involved in... row 1, ECM Organisation (for now)
+expDatECM <- subset(expDat, rownames(expDat) %in% ensginPaths[[1]])
+
+# Incorporate this gene expression information into a heatmap, as in STAT435
+# xx should be a numeric matrix of the expression data
+
+# The basic heatmap
+heatmap.2(expDatECM,trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),keysize=1,
+ labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
+```
+
+    ## Warning in heatmap.2(expDatECM, trace = "none", scale = "none", Colv = F, :
+    ## Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row dendogram.
+
+    ## Warning in heatmap.2(expDatECM, trace = "none", scale = "none", Colv = F, :
+    ## Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting column
+    ## dendogram.
+
+``` r
+# Perform svd analysis on your expression matrix
+ECMsvd <- svd(expDatECM)
+attach(ECMsvd)
+names(ECMsvd)
+```
+
+    ## [1] "d" "u" "v"
+
+``` r
+# Plot the svd data
+heatmap.2(u%*%diag(d)%*%t(v),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
+ labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
+```
+
+    ## Warning in heatmap.2(u %*% diag(d) %*% t(v), trace = "none", scale = "none", :
+    ## Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row dendogram.
+
+    ## Warning in heatmap.2(u %*% diag(d) %*% t(v), trace = "none", scale = "none", :
+    ## Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting column
+    ## dendogram.
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-1.png)<!-- -->
+
+``` r
+# Look at how different eigenvectors separate the data
+heatmap.2(d[1]*u[,1]%*%t(v[,1]),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
+ labCol=paste("Cell line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
+```
+
+    ## Warning in heatmap.2(d[1] * u[, 1] %*% t(v[, 1]), trace = "none", scale =
+    ## "none", : Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row
+    ## dendogram.
+
+    ## Warning in heatmap.2(d[1] * u[, 1] %*% t(v[, 1]), trace = "none", scale =
+    ## "none", : Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting
+    ## column dendogram.
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-2.png)<!-- -->
+
+``` r
+heatmap.2(u[,1:2]%*%diag(d[1:2])%*%t(v[,1:2]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
+ col=greenred(50),labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
+```
+
+    ## Warning in heatmap.2(u[, 1:2] %*% diag(d[1:2]) %*% t(v[, 1:2]), trace =
+    ## "none", : Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row
+    ## dendogram.
+
+    ## Warning in heatmap.2(u[, 1:2] %*% diag(d[1:2]) %*% t(v[, 1:2]), trace =
+    ## "none", : Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting
+    ## column dendogram.
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-3.png)<!-- -->
+
+``` r
+heatmap.2(u[,1:3]%*%diag(d[1:3])%*%t(v[,1:3]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
+ col=greenred(50),labCol=paste("Cell  Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
+```
+
+    ## Warning in heatmap.2(u[, 1:3] %*% diag(d[1:3]) %*% t(v[, 1:3]), trace =
+    ## "none", : Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row
+    ## dendogram.
+
+    ## Warning in heatmap.2(u[, 1:3] %*% diag(d[1:3]) %*% t(v[, 1:3]), trace =
+    ## "none", : Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting
+    ## column dendogram.
+
+![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-4.png)<!-- -->

@@ -41,8 +41,8 @@ ccleExpData <- read.gct('CCLE_GDSC/Data/CCLE_RNAseq_genes_counts_20180929.gct')
 logExpDat <- log(ccleExpData + 0.5)
 dge <- DGEList(counts=ccleExpData)
 dge <- calcNormFactors(dge)
-v <- voom(dge, plot=TRUE)
-expDat <- v$E
+dge_voom <- voom(dge, plot=TRUE)
+expDat <- dge_voom$E
 
 # GDSC2 Processing (from old document)
 GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
@@ -317,7 +317,7 @@ dotplot(dasat_rPAoverrep, showCategory=11, font.size=8)
 
 # Find all the genes, note which ones are significant. tt3 is all genes, assign those that are significant as 1's, everything else as 0
 
-```{r GoSeq Analysis for top X genes. ACTUALLY USE THIS ONE CAUSE IT'S PROBABLY FILTERED BETTER}
+```{r GoSeq Analysis for top X genes}
 ## Load packages
 library(reactome.db)
 library(goseq)
@@ -439,31 +439,38 @@ goseqPathways$DEgenesInCat <- genesStick
 ```
 
 ```{r Find expression data and make a heatmap}
+# Convert gene names to ensembl ID's using GeneLabelTool, and find the expression data from expData
+ensginPaths <- lapply(genesinPaths, function(x) GeneLabelTool$ENSEMBL[na.omit(match(x, GeneLabelTool$ENTREZID))] )
+# Standardise rownames between expDat and ensginPaths
+rownames(expDat) <- strsplit(rownames(expDat),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
+# subset so you've only got the expDat samples involved in... row 1, ECM Organisation (for now)
+expDatECM <- subset(expDat, rownames(expDat) %in% ensginPaths[[1]])
 
-# Convert gene names using GeneLabelTool, and find the expression data from expData
-
-
-# Finally, incorporate this gene expression information into a heatmap, as in STAT435
+# Incorporate this gene expression information into a heatmap, as in STAT435
 # xx should be a numeric matrix of the expression data
 
-heatmap.2(xx,trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),keysize=1,
- labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)),key=F)
+# The basic heatmap
+heatmap.2(expDatECM,trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),keysize=1,
+ labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
 
-yy<-svd(xx)
-attach(yy)
-names(yy)
+# Perform svd analysis on your expression matrix
+ECMsvd <- svd(expDatECM)
+attach(ECMsvd)
+names(ECMsvd)
 
+# Plot the svd data
 heatmap.2(u%*%diag(d)%*%t(v),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
- labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)),key=F)
+ labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
 
+# Look at how different eigenvectors separate the data
 heatmap.2(d[1]*u[,1]%*%t(v[,1]),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
- labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)),key=F)
+ labCol=paste("Cell line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
 
 heatmap.2(u[,1:2]%*%diag(d[1:2])%*%t(v[,1:2]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
- col=greenred(50),labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)))
+ col=greenred(50),labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
 
 heatmap.2(u[,1:3]%*%diag(d[1:3])%*%t(v[,1:3]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
- col=greenred(50),labCol=paste("Sample",1:ncol(xx)),labRow=paste("Gene",1:ncol(xx)))
+ col=greenred(50),labCol=paste("Cell  Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
 ```
 
 
