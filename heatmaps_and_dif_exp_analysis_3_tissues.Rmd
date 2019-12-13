@@ -1,23 +1,19 @@
 ---
-title: "dasatinib_dif_exp_analysis_29_11_19"
+title: "heatmaps_and_dif_exp_analysis_3_tissues"
 author: "Kieran Redpath"
-date: "29 November 2019"
+date: "13 December 2019"
 output: github_document
 ---
+
+# THIS VERSION HAS SOME CHANGES FROM "dasatinib_dif_exp_analysis_29_11_19" and other similar documents.
+# expDat is filtered to only include breast, gastric, and colorectal tissues, but the rest of the analyses
+# etc are the same.
+
+# DON'T USE ANY OF THIS CODE YET, EVEN TO MAKE A .md. THERE'S NO POINT, IT'S IDENTICAL TO MY OTHER DOCUMENT
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-NOTE: Don't run this at the same time as "dasatinib_dif_exp_analysis_3_tissues", cause I'm lazy and didn't change the names of objects
-
-limma differential expression analysis (lecture 3)
-look at high and low ic50 groups, and then find out which genes are differentially expressed between the two groups
-data frame with all the samples that have dasatinib data, and all the genes. These will have high/low ic50 associated with them (50/50 split)
-Will show you which genes are involved in dasatinib sensitivity
-fit model with lmfit and ebayes, gives you a table with p values, showing significance of differential expression
-volcano plot tells you how big and significant the difference is, stuff that comes out the top will be the most important
-Pathway analysis to see what it's actually changing
 
 ```{r Load packages}
 library(limma)
@@ -43,6 +39,14 @@ dge <- DGEList(counts=ccleExpData)
 dge <- calcNormFactors(dge)
 dge_voom <- voom(dge, plot=TRUE)
 expDat <- dge_voom$E
+
+###!!! NEEDS TO CHANGE IN HERE SOMEWHERE !!!###
+# expDat_sort is used for differential expression analysis, which we need to be tissue specific.
+# Need to add cell line tissue info to dasatinib$CELL_LINE_NAME and/or commonSamples, and use this to change what expDat_sort actually does
+# THIS WILL GIVE YOU DIFFERENT RESULTS FOR DIFFERENTIAL EXPRESSION ANALYSIS, SO WHICH GENES ARE SIGNIFICANT
+# YOU'LL HAVE TO CHANGE STUFF FURTHER DOWN AS WELL, SO THAT THE HEATMAPS ALSO ONLY INCLUDE THESE THREE TISSUES
+
+###!!! BASICALLY, YOU NEED TO FILTER TWICE- SO THE TWO COMPONENTS OF THE HEATMAPS (THE SIGNIFICANT GENES AND THE CORRECT CELL LINES) ARE BOTH BASED ON THE 3 TISSUES YOU'RE INTERESTED IN. !!!###
 
 # GDSC2 Processing (from old document)
 GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
@@ -469,34 +473,6 @@ for(k in 1:nrow(expDat)){
   heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
   dev.off()
 }
-```
-# NOW! GO WAY BACK AND DO ALL THIS STUFF BUT WITH ONLY THE 3 TISSUES YOU'RE INTERESTED IN
-
-
-
-
-# LEAVE ALL THIS STUFF FOR NOW
-```{r}
-# Perform svd analysis on your expression matrix
-ECMsvd <- svd(expDatECM)
-attach(ECMsvd)
-names(ECMsvd)
-
-# Plot the svd data
-heatmap.2(u%*%diag(d)%*%t(v),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
- labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
-```
-
-```{r}
-# Look at how different eigenvectors separate the data
-heatmap.2(d[1]*u[,1]%*%t(v[,1]),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
- labCol=paste("Cell line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
-
-heatmap.2(u[,1:2]%*%diag(d[1:2])%*%t(v[,1:2]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
- col=greenred(50),labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
-
-heatmap.2(u[,1:3]%*%diag(d[1:3])%*%t(v[,1:3]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
- col=greenred(50),labCol=paste("Cell  Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
 ```
 
 
