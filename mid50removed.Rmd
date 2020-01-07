@@ -494,9 +494,8 @@ rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply
 ```
 
 ```{r Creating the heatmaps}
-# Will fix this when I get a chance, currently excluded from the markdown because the first row is wrong (subscript out of bounds)
 ## The Loop
-for(k in 1:nrow(expDat_sort)){
+for(k in 1:length(ensginPaths)){
   pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
   rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
     GeneLabelTool$SYMBOL[.]
@@ -510,4 +509,3 @@ for(k in 1:nrow(expDat_sort)){
   dev.off()
 }
 ```
-

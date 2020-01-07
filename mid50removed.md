@@ -4038,18 +4038,19 @@ rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply
 # table(tisx,ccx)
 ```
 
-# Will fix this when I get a chance, currently excluded from the markdown because the first row is wrong (subscript out of bounds)
-
+``` r
 ## The Loop
-
-for(k in 1:nrow(expDat\_sort)){ pathway\_expDat\_sort \<-
-subset(expDat\_sort, rownames(expDat\_sort) %in% ensginPaths\[\[k\]\])
-rownames(pathway\_expDat\_sort) \<-
-match(rownames(pathway\_expDat\_sort),
-GeneLabelTool\(ENSEMBL) %>%  GeneLabelTool\)SYMBOL\[.\] zz \<-
-apply(pathway\_expDat\_sort, 1, scale, scale=TRUE) %\>% t() colnames(zz)
-\<- colnames(pathway\_expDat\_sort) zz\[zz \> 3\] \<- 3 zz\[zz \< -3\]
-\<- -3 pn \<- gsub(" “,”\_“,goseqPathways$Pathway\[k\])
-pdf(paste0(”BCG-“, pn,”-heatmap.pdf"), height=12, width=20)
-heatmap.2(zz, trace=‘none’, scale=‘none’, col=bluered(50),
-ColSideColors=cc) dev.off() }
+for(k in 1:length(ensginPaths)){
+  pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
+  rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
+    GeneLabelTool$SYMBOL[.]
+  zz <- apply(pathway_expDat_sort, 1, scale, scale=TRUE) %>% t()
+  colnames(zz) <- colnames(pathway_expDat_sort)
+  zz[zz > 3] <- 3
+  zz[zz < -3] <- -3
+  pn <- gsub(" ","_",goseqPathways$Pathway[k])
+  pdf(paste0("BCGmid50removed-", pn, "-heatmap.pdf"), height=12, width=20)
+  heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
+  dev.off()
+}
+```
