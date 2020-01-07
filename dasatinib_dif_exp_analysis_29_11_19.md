@@ -28,14 +28,14 @@ library(CePa)
 library(tidyverse)
 ```
 
-    ## -- Attaching packages -------------------------------------------------------------------------------------- tidyverse 1.3.0 --
+    ## -- Attaching packages ------------------------------------------------------------------------------------------------- tidyverse 1.3.0 --
 
     ## v tibble  2.1.3     v dplyr   0.8.3
     ## v tidyr   1.0.0     v stringr 1.4.0
     ## v readr   1.3.1     v forcats 0.4.0
     ## v purrr   0.3.3
 
-    ## -- Conflicts ----------------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## -- Conflicts ---------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
     ## x dplyr::between()   masks data.table::between()
     ## x tidyr::extract()   masks magrittr::extract()
     ## x dplyr::filter()    masks stats::filter()
@@ -166,6 +166,8 @@ dge_voom <- voom(dge, plot=TRUE)
 
 ``` r
 expDat <- dge_voom$E
+# This keeps the tissue names for if you need them later
+expDatTissues <- dge_voom$E
 
 # GDSC2 Processing (from old document)
 GDSC2 <- fread('CCLE_GDSC/Data/GDSC2_fitted_dose_response_15Oct19.csv', sep= ';')
@@ -4223,103 +4225,105 @@ for(i in 1:nrow(goseqPathways)){
 
 # This converts *all* the list elements from entrez ID to symbols, and you can then concenate it seperately
 symbolsinPaths <- lapply(genesinPaths, function(x) GeneLabelTool$SYMBOL[na.omit(match(x, GeneLabelTool$ENTREZID))] )
-
 # Concenate these for ease of reading
 genesStick <- lapply(symbolsinPaths, function(x) paste0(x, collapse="::", sep="")) %>% unlist()
-
 # Add these genes as a column on goseqPathways
 goseqPathways$DEgenesInCat <- genesStick
+# Alter the "goseqPathways" data.frame so that no pathway names contain "/" (for file names later)
+goseqPathways <- lapply(goseqPathways, gsub, pattern='/', replacement=' ') %>% as.data.frame()
 ```
 
 ``` r
-# Convert gene names to ensembl ID's using GeneLabelTool, and find the expression data from expData
-ensginPaths <- lapply(genesinPaths, function(x) GeneLabelTool$ENSEMBL[na.omit(match(x, GeneLabelTool$ENTREZID))] )
-# Standardise rownames between expDat and ensginPaths
-rownames(expDat) <- strsplit(rownames(expDat),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
-# subset so you've only got the expDat samples involved in... row 1, ECM Organisation (for now)
-expDatECM <- subset(expDat, rownames(expDat) %in% ensginPaths[[1]])
-
-# Incorporate this gene expression information into a heatmap, as in STAT435
-# xx should be a numeric matrix of the expression data
-
-# The basic heatmap
-heatmap.2(expDatECM,trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),keysize=1,
- labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
+## SETUP STUFF
+# Look at the tissue names, colour coded the same as the rainbow in the heatmap. Create a makeshift legend
+tis <- lapply(strsplit(colnames(expDatTissues), "_"), function(x) paste0(x[-1], collapse="_", sep="")) %>%
+  unlist()
+table(tis)
 ```
 
-    ## Warning in heatmap.2(expDatECM, trace = "none", scale = "none", Colv = F, :
-    ## Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row dendogram.
-
-    ## Warning in heatmap.2(expDatECM, trace = "none", scale = "none", Colv = F, :
-    ## Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting column
-    ## dendogram.
+    ## tis
+    ##                  AUTONOMIC_GANGLIA                      BILIARY_TRACT 
+    ##                                 16                                  8 
+    ##                               BONE                             BREAST 
+    ##                                 20                                 51 
+    ##             CENTRAL_NERVOUS_SYSTEM                             CERVIX 
+    ##                                 65                                  3 
+    ##                        ENDOMETRIUM                         FIBROBLAST 
+    ##                                 28                                 37 
+    ## HAEMATOPOIETIC_AND_LYMPHOID_TISSUE                             KIDNEY 
+    ##                                173                                 32 
+    ##                    LARGE_INTESTINE                              LIVER 
+    ##                                 56                                 25 
+    ##                               LUNG                         OESOPHAGUS 
+    ##                                188                                 27 
+    ##                              OVARY                           PANCREAS 
+    ##                                 47                                 41 
+    ##                             PLEURA                           PROSTATE 
+    ##                                  9                                  8 
+    ##                     SALIVARY_GLAND                               SKIN 
+    ##                                  2                                 49 
+    ##                    SMALL_INTESTINE                        SOFT_TISSUE 
+    ##                                  1                                 28 
+    ##                            STOMACH                            THYROID 
+    ##                                 37                                 12 
+    ##          UPPER_AERODIGESTIVE_TRACT                      URINARY_TRACT 
+    ##                                 31                                 25
 
 ``` r
-# Perform svd analysis on your expression matrix
-ECMsvd <- svd(expDatECM)
-attach(ECMsvd)
-names(ECMsvd)
+cc <- as.factor(tis) %>% as.numeric() %>% rainbow(length(table(.)))[.]
+tisTab <- table(tis)
+plot(1,1,type='p',col="white")
+legend('topleft', paste0(names(tisTab), " (", tisTab, ")"), fill=rainbow(length(table(tis))), cex=0.6)
 ```
-
-    ## [1] "d" "u" "v"
-
-``` r
-# Plot the svd data
-heatmap.2(u%*%diag(d)%*%t(v),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
- labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
-```
-
-    ## Warning in heatmap.2(u %*% diag(d) %*% t(v), trace = "none", scale = "none", :
-    ## Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row dendogram.
-
-    ## Warning in heatmap.2(u %*% diag(d) %*% t(v), trace = "none", scale = "none", :
-    ## Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting column
-    ## dendogram.
 
 ![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-1.png)<!-- -->
 
 ``` r
+# Create an object that shows you which ensembl genes are in which paths
+ensginPaths <- lapply(genesinPaths, function(x) GeneLabelTool$ENSEMBL[na.omit(match(x, GeneLabelTool$ENTREZID))] )
+
+# Standardise rownames between expDat and GeneLabelTool
+rownames(expDat) <- strsplit(rownames(expDat),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
+
+## THE LOOP
+for(k in 1:length(ensginPaths)){
+  pathway_expDat <- subset(expDat, rownames(expDat) %in% ensginPaths[[k]])
+  rownames(pathway_expDat) <- match(rownames(pathway_expDat), GeneLabelTool$ENSEMBL) %>% 
+    GeneLabelTool$SYMBOL[.]
+  zz <- apply(pathway_expDat, 1, scale, scale=TRUE) %>% t()
+  colnames(zz) <- colnames(pathway_expDat)
+  zz[zz > 3] <- 3
+  zz[zz < -3] <- -3
+  pn <- gsub(" ","_",goseqPathways$Pathway[k])
+  pdf(paste0(pn, "-heatmap.pdf"), height=12, width=20)
+  heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
+  dev.off()
+}
+```
+
+# LEAVE ALL THIS STUFF FOR NOW
+
+# Perform svd analysis on your expression matrix
+
+ECMsvd \<- svd(expDatECM) attach(ECMsvd)
+names(ECMsvd)
+
+# Plot the svd data
+
+heatmap.2(u%*%diag(d)%*%t(v),trace=‘none’,scale=‘none’,Colv=F,Rowv=F,col=greenred(50),
+labCol=paste(“Cell
+Line”,1:ncol(expDatECM)),labRow=paste(“Gene”,1:ncol(expDatECM)),key=F)
+
 # Look at how different eigenvectors separate the data
-heatmap.2(d[1]*u[,1]%*%t(v[,1]),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
- labCol=paste("Cell line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
-```
 
-    ## Warning in heatmap.2(d[1] * u[, 1] %*% t(v[, 1]), trace = "none", scale =
-    ## "none", : Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row
-    ## dendogram.
+heatmap.2(d\[1\]*u\[,1\]%*%t(v\[,1\]),trace=‘none’,scale=‘none’,Colv=F,Rowv=F,col=greenred(50),
+labCol=paste(“Cell
+line”,1:ncol(expDatECM)),labRow=paste(“Gene”,1:ncol(expDatECM)),key=F)
 
-    ## Warning in heatmap.2(d[1] * u[, 1] %*% t(v[, 1]), trace = "none", scale =
-    ## "none", : Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting
-    ## column dendogram.
+heatmap.2(u\[,1:2\]%*%diag(d\[1:2\])%*%t(v\[,1:2\]),trace=‘none’,scale=‘none’,Colv=F,Rowv=F,key=F,
+col=greenred(50),labCol=paste(“Cell
+Line”,1:ncol(expDatECM)),labRow=paste(“Gene”,1:ncol(expDatECM)))
 
-![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-2.png)<!-- -->
-
-``` r
-heatmap.2(u[,1:2]%*%diag(d[1:2])%*%t(v[,1:2]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
- col=greenred(50),labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
-```
-
-    ## Warning in heatmap.2(u[, 1:2] %*% diag(d[1:2]) %*% t(v[, 1:2]), trace =
-    ## "none", : Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row
-    ## dendogram.
-
-    ## Warning in heatmap.2(u[, 1:2] %*% diag(d[1:2]) %*% t(v[, 1:2]), trace =
-    ## "none", : Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting
-    ## column dendogram.
-
-![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-3.png)<!-- -->
-
-``` r
-heatmap.2(u[,1:3]%*%diag(d[1:3])%*%t(v[,1:3]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
- col=greenred(50),labCol=paste("Cell  Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
-```
-
-    ## Warning in heatmap.2(u[, 1:3] %*% diag(d[1:3]) %*% t(v[, 1:3]), trace =
-    ## "none", : Discrepancy: Rowv is FALSE, while dendrogram is `both'. Omitting row
-    ## dendogram.
-
-    ## Warning in heatmap.2(u[, 1:3] %*% diag(d[1:3]) %*% t(v[, 1:3]), trace =
-    ## "none", : Discrepancy: Colv is FALSE, while dendrogram is `column'. Omitting
-    ## column dendogram.
-
-![](dasatinib_dif_exp_analysis_29_11_19_files/figure-gfm/Find%20expression%20data%20and%20make%20a%20heatmap-4.png)<!-- -->
+heatmap.2(u\[,1:3\]%*%diag(d\[1:3\])%*%t(v\[,1:3\]),trace=‘none’,scale=‘none’,Colv=F,Rowv=F,key=F,
+col=greenred(50),labCol=paste(“Cell
+Line”,1:ncol(expDatECM)),labRow=paste(“Gene”,1:ncol(expDatECM)))

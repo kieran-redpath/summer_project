@@ -458,7 +458,7 @@ ensginPaths <- lapply(genesinPaths, function(x) GeneLabelTool$ENSEMBL[na.omit(ma
 rownames(expDat) <- strsplit(rownames(expDat),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
 
 ## THE LOOP
-for(k in 1:nrow(expDat)){
+for(k in 1:length(ensginPaths)){
   pathway_expDat <- subset(expDat, rownames(expDat) %in% ensginPaths[[k]])
   rownames(pathway_expDat) <- match(rownames(pathway_expDat), GeneLabelTool$ENSEMBL) %>% 
     GeneLabelTool$SYMBOL[.]
@@ -472,13 +472,10 @@ for(k in 1:nrow(expDat)){
   dev.off()
 }
 ```
-# NOW! GO WAY BACK AND DO ALL THIS STUFF BUT WITH ONLY THE 3 TISSUES YOU'RE INTERESTED IN
-
-
 
 
 # LEAVE ALL THIS STUFF FOR NOW
-```{r}
+
 # Perform svd analysis on your expression matrix
 ECMsvd <- svd(expDatECM)
 attach(ECMsvd)
@@ -487,9 +484,9 @@ names(ECMsvd)
 # Plot the svd data
 heatmap.2(u%*%diag(d)%*%t(v),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
  labCol=paste("Cell Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
-```
 
-```{r}
+
+
 # Look at how different eigenvectors separate the data
 heatmap.2(d[1]*u[,1]%*%t(v[,1]),trace='none',scale='none',Colv=F,Rowv=F,col=greenred(50),
  labCol=paste("Cell line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)),key=F)
@@ -499,6 +496,6 @@ heatmap.2(u[,1:2]%*%diag(d[1:2])%*%t(v[,1:2]),trace='none',scale='none',Colv=F,R
 
 heatmap.2(u[,1:3]%*%diag(d[1:3])%*%t(v[,1:3]),trace='none',scale='none',Colv=F,Rowv=F,key=F,
  col=greenred(50),labCol=paste("Cell  Line",1:ncol(expDatECM)),labRow=paste("Gene",1:ncol(expDatECM)))
-```
+
 
 

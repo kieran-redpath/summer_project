@@ -491,9 +491,28 @@ rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply
 #   unlist()
 # ccx <- as.factor(tisx) %>% as.numeric() %>% rainbow(length(table(.)))[.]
 # table(tisx,ccx)
+```
 
-## THE LOOP
-for(k in 1:nrow(expDat_sort)){
+
+```{r The Working Loop}
+## The Version That Definitely Works
+for(k in 1:length(ensginPaths)){
+  pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
+  rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
+    GeneLabelTool$SYMBOL[.]
+  zz <- apply(pathway_expDat_sort, 1, scale, scale=TRUE) %>% t()
+  colnames(zz) <- colnames(pathway_expDat_sort)
+  zz[zz > 3] <- 3
+  zz[zz < -3] <- -3
+  pn <- gsub(" ","_",goseqPathways$Pathway[k])
+  pdf(paste0("BCG-", pn, "-heatmap.pdf"), height=12, width=20)
+  heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
+  dev.off()
+}
+```
+
+# Trying to order the heatmap columns by IC50 log fold change
+for(k in 1:length(ensginPaths)){
   pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
   rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
     GeneLabelTool$SYMBOL[.]
@@ -507,26 +526,3 @@ for(k in 1:nrow(expDat_sort)){
   heatmap.2(zz[ ,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc, Colv = FALSE)
   dev.off()
 }
-```
-
-## The Version That Definitely Works
-
-for(k in 1:nrow(expDat_sort)){
-  pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
-  rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
-    GeneLabelTool$SYMBOL[.]
-  zz <- apply(pathway_expDat_sort, 1, scale, scale=TRUE) %>% t()
-  colnames(zz) <- colnames(pathway_expDat_sort)
-  zz[zz > 3] <- 3
-  zz[zz < -3] <- -3
-  pn <- gsub(" ","_",goseqPathways$Pathway[k])
-  pdf(paste0("BCG-", pn, "-heatmap.pdf"), height=12, width=20)
-  heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
-  dev.off()
-}
-
-
-# Order the heatmap columns by IC50 log fold change
-# Filter to remove middle 50% for analysis, instead of splitting 50:50
-
-# Both of these need to be done way earlier on
