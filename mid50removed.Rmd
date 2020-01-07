@@ -493,6 +493,7 @@ rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply
 # table(tisx,ccx)
 ```
 
+```{r Creating the heatmaps}
 # Will fix this when I get a chance, currently excluded from the markdown because the first row is wrong (subscript out of bounds)
 ## The Loop
 for(k in 1:nrow(expDat_sort)){
@@ -504,7 +505,9 @@ for(k in 1:nrow(expDat_sort)){
   zz[zz > 3] <- 3
   zz[zz < -3] <- -3
   pn <- gsub(" ","_",goseqPathways$Pathway[k])
-  pdf(paste0("BCG-", pn, "-heatmap.pdf"), height=12, width=20)
+  pdf(paste0("BCGmid50removed-", pn, "-heatmap.pdf"), height=12, width=20)
   heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
   dev.off()
 }
+```
+
