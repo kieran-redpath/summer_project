@@ -415,7 +415,7 @@ hyperReactome <- goseq(pwf, gene2cat = rGeneByPath, method="Hypergeometric")
 goseqReactome$adjP <- p.adjust(goseqReactome$over_represented_pvalue, method="fdr")
 hyperReactome$adjP <- p.adjust(hyperReactome$over_represented_pvalue, method="fdr")
 
-## Using 0.05 as FDR significance threshold.
+
 venn(list(goseq=goseqReactome$category[goseqReactome$adjP <1],
           hyper=hyperReactome$category[hyperReactome$adjP <1]))
 # Look at the genes in the venn diagram
@@ -468,14 +468,13 @@ goseqPathways <- lapply(goseqPathways, gsub, pattern='/', replacement=' ') %>% a
 ```{r Find expression data and make a heatmap}
 ## SETUP STUFF
 # THE RAINBOW IS CURRENTLY CODED TO ALL TISSUES. WE WANT IT ONLY CODED TO 3.
-expDatTissues <- dge_voom$E
-
-which(expDatTissues %in% "BREAST", "LARGE_INTESTINE", "STOMACH")
-
 
 # Look at the tissue names, colour coded the same as the rainbow in the heatmap. Create a makeshift legend
-tis <- lapply(strsplit(colnames(expDatTissues), "_"), function(x) paste0(x[-1], collapse="_", sep="")) %>%
-  unlist()
+
+# SPARE I THINK
+# tis <- lapply(strsplit(colnames(expDat_sort), "_"), function(x) paste0(x[-1], collapse="_", sep="")) %>%
+#  unlist()
+tis <- tissuetoolsort$Tissue_Type
 cc <- as.factor(tis) %>% as.numeric() %>% rainbow(length(table(.)))[.]
 tisTab <- table(tis)
 plot(1,1,type='p',col="white")
@@ -487,10 +486,11 @@ ensginPaths <- lapply(genesinPaths, function(x) GeneLabelTool$ENSEMBL[na.omit(ma
 # Standardise rownames between expDat and GeneLabelTool
 rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
 
-tisx <- lapply(strsplit(colnames(expDat_sort), "_"), function(x) paste0(x[-1], collapse="_", sep="")) %>%
-  unlist()
-ccx <- as.factor(tisx) %>% as.numeric() %>% rainbow(length(table(.)))[.]
-table(tisx,ccx)
+#SPARE I THINK
+# tisx <- lapply(strsplit(colnames(expDat_sort), "_"), function(x) paste0(x[-1], collapse="_", sep="")) %>%
+#   unlist()
+# ccx <- as.factor(tisx) %>% as.numeric() %>% rainbow(length(table(.)))[.]
+# table(tisx,ccx)
 
 ## THE LOOP
 for(k in 1:nrow(expDat_sort)){
@@ -502,8 +502,31 @@ for(k in 1:nrow(expDat_sort)){
   zz[zz > 3] <- 3
   zz[zz < -3] <- -3
   pn <- gsub(" ","_",goseqPathways$Pathway[k])
-  pdf(paste0("BCG-", pn, "-heatmap2.pdf"), height=12, width=20)
-  heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
+  pdf(paste0("BCG-", pn, "-heatmap.pdf"), height=12, width=20)
+  ord = order(SigSamples$IC50_logFC)
+  heatmap.2(zz[ ,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc, Colv = FALSE)
   dev.off()
 }
 ```
+
+## The Version That Definitely Works
+
+for(k in 1:nrow(expDat_sort)){
+  pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
+  rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
+    GeneLabelTool$SYMBOL[.]
+  zz <- apply(pathway_expDat_sort, 1, scale, scale=TRUE) %>% t()
+  colnames(zz) <- colnames(pathway_expDat_sort)
+  zz[zz > 3] <- 3
+  zz[zz < -3] <- -3
+  pn <- gsub(" ","_",goseqPathways$Pathway[k])
+  pdf(paste0("BCG-", pn, "-heatmap.pdf"), height=12, width=20)
+  heatmap.2(zz, trace='none', scale='none', col=bluered(50), ColSideColors=cc)
+  dev.off()
+}
+
+
+# Order the heatmap columns by IC50 log fold change
+# Filter to remove middle 50% for analysis, instead of splitting 50:50
+
+# Both of these need to be done way earlier on
