@@ -68,6 +68,9 @@ dasatinib_sort$AUC_Level <- ifelse(dasatinib_sort$AUC < quantile(dasatinib_sort$
 # Filter "dasatinib_sort" so that you're only looking at 3 tissues for the rest of the document
 dasatinib_sort <- dasatinib_sort %>% filter(., TCGA_DESC=="COREAD" | TCGA_DESC=="BRCA" | TCGA_DESC=="STAD")  
 
+# Also order it
+dasatinib_sort[order(dasatinib_sort$AUC),]
+
 # expDat Processing
 expDat_all <- t(expDat_sort)
 expDat_all <- as.data.frame(expDat_all)
@@ -511,7 +514,13 @@ for(k in 1:length(ensginPaths)){
 }
 ```
 
+
 # Trying to order the heatmap columns by IC50 log fold change
+# Setup (some may have to go earlier)
+orderedsort = dasatinib_sort[order(dasatinib_sort$AUC),]
+orderedsort = orderedsort$CCLE_Name
+
+#The loop part
 for(k in 1:length(ensginPaths)){
   pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
   rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
@@ -521,8 +530,17 @@ for(k in 1:length(ensginPaths)){
   zz[zz > 3] <- 3
   zz[zz < -3] <- -3
   pn <- gsub(" ","_",goseqPathways$Pathway[k])
-  pdf(paste0("BCG-", pn, "-heatmap.pdf"), height=12, width=20)
-  ord = order(SigSamples$IC50_logFC)
-  heatmap.2(zz[ ,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc, Colv = FALSE)
+  pdf(paste0("TESTTESTTEST-", pn, "-heatmap.pdf"), height=12, width=20)
+  heatmap.2(zz[, ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc, Colv = FALSE)
   dev.off()
 }
+
+
+ord = filter(orderedsort)
+
+ord <- subset(orderedsort, subset=which(colnames(zz) %in% orderedsort), select=which(colnames(zz) %in% orderedsort))
+
+intzz <- intersect(orderedsort, colnames(zz))
+zz_match <- match(intzz, colnames(zz))
+zz_ord <- orderedsort[na.omit(zz_match) , ]
+

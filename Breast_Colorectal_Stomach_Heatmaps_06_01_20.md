@@ -191,6 +191,9 @@ dasatinib_sort$AUC_Level <- ifelse(dasatinib_sort$AUC < quantile(dasatinib_sort$
 # Filter "dasatinib_sort" so that you're only looking at 3 tissues for the rest of the document
 dasatinib_sort <- dasatinib_sort %>% filter(., TCGA_DESC=="COREAD" | TCGA_DESC=="BRCA" | TCGA_DESC=="STAD")  
 
+# Also order it
+dasatinib_sort[order(dasatinib_sort$AUC),]
+
 # expDat Processing
 expDat_all <- t(expDat_sort)
 expDat_all <- as.data.frame(expDat_all)
@@ -3923,14 +3926,28 @@ for(k in 1:length(ensginPaths)){
 
 # Trying to order the heatmap columns by IC50 log fold change
 
-for(k in 1:length(ensginPaths)){ pathway\_expDat\_sort \<-
-subset(expDat\_sort, rownames(expDat\_sort) %in% ensginPaths\[\[k\]\])
-rownames(pathway\_expDat\_sort) \<-
+# Setup (some may have to go earlier)
+
+orderedsort = dasatinib\_sort\[order(dasatinib\_sort$AUC),\] orderedsort
+= orderedsort$CCLE\_Name
+
+\#The loop part for(k in 1:length(ensginPaths)){ pathway\_expDat\_sort
+\<- subset(expDat\_sort, rownames(expDat\_sort) %in%
+ensginPaths\[\[k\]\]) rownames(pathway\_expDat\_sort) \<-
 match(rownames(pathway\_expDat\_sort),
 GeneLabelTool\(ENSEMBL) %>%  GeneLabelTool\)SYMBOL\[.\] zz \<-
 apply(pathway\_expDat\_sort, 1, scale, scale=TRUE) %\>% t() colnames(zz)
 \<- colnames(pathway\_expDat\_sort) zz\[zz \> 3\] \<- 3 zz\[zz \< -3\]
-\<- -3 pn \<- gsub("
-“,”\_",goseqPathways\(Pathway[k])  pdf(paste0("BCG-", pn, "-heatmap.pdf"), height=12, width=20)  ord = order(SigSamples\)IC50\_logFC)
-heatmap.2(zz\[ ,ord\], trace=‘none’, scale=‘none’, col=bluered(50),
+\<- -3 pn \<- gsub(" “,”\_“,goseqPathways$Pathway\[k\])
+pdf(paste0(”TESTTESTTEST-“, pn,”-heatmap.pdf"), height=12, width=20)
+heatmap.2(zz\[, ord\], trace=‘none’, scale=‘none’, col=bluered(50),
 ColSideColors=cc, Colv = FALSE) dev.off() }
+
+ord = filter(orderedsort)
+
+ord \<- subset(orderedsort, subset=which(colnames(zz) %in% orderedsort),
+select=which(colnames(zz) %in% orderedsort))
+
+intzz \<- intersect(orderedsort, colnames(zz)) zz\_match \<-
+match(intzz, colnames(zz)) zz\_ord \<- orderedsort\[na.omit(zz\_match) ,
+\]
