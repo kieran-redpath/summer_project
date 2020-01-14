@@ -39,6 +39,7 @@ create a heatmap of the genes that are shared between the pathways (check the co
 
 * __Heatmap Construction:__
 + Builds heatmaps for each pathway, and saves them as PDF's.
++ Prints heatmaps for the top 10 pathways inline.
 
 
 ### *A note on the relationship between IC50 and AUC*
@@ -69,6 +70,7 @@ library(gplots)
 source('heatmap-mik.R')
 library(knitr)
 library(kableExtra)
+library(devtools)
 ```
 
 ### *Load data*
@@ -438,6 +440,7 @@ symbolsinPaths <- lapply(genesinPaths, function(x) GeneLabelTool$SYMBOL[na.omit(
 genesStick <- lapply(symbolsinPaths, function(x) paste0(x, collapse="::", sep="")) %>% unlist()
 goseqPathways$DEgenesInCat <- genesStick
 goseqPathways <- lapply(goseqPathways, gsub, pattern='/', replacement=' ') %>% as.data.frame()
+goseqPathways <- lapply(goseqPathways, gsub, pattern='ERBB2:ERBB3', replacement='ERBB2-ERBB3') %>% as.data.frame()
 
 # 3.
 goseqPathways %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=8), fixed_thead=T) %>% save_kable(file = "Heatmaps/Enriched_Pathways.html", self_contained = T)
@@ -473,9 +476,8 @@ rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply
 
 ### *Create heatmaps for each pathway identified*
 * This loop cycles through and creates a heatmap for each pathway, showing the genes involved from the dataset, and their expression level. These heatmaps are saved as PDF's.
-```{r, warnings=FALSE}
+```{r, warning = FALSE}
 ord = order(cc["AUC Group",])
-
 for(k in 1:length(ensginPaths)){
   pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
   rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
@@ -487,7 +489,7 @@ for(k in 1:length(ensginPaths)){
     zz[zz < -3] <- -3
     pn <- gsub(" ","_",goseqPathways$Pathway[k])
     pdf(paste0("Heatmaps/", pn, "_heatmap.pdf"), height=12, width=20)
-    heatmap.mik(zz[,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc[,ord], Colv=FALSE, mar=c(8,12), keysize=1)
+    heatmap.mik(zz[,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc[,ord], Colv=FALSE, mar=c(8,12), keysize=1, main = (goseqPathways$Pathway[k]))
     legend(0.4,0.97,
            c("Breast", "High -log IC50", "High AUC", "Large Intestine", "Low -log IC50", "Low AUC", "Stomach", "", ""),
            fill=c("red","yellow","yellow","green","blue","blue","blue","white","white"), border="white", ncol=3)
@@ -496,7 +498,51 @@ for(k in 1:length(ensginPaths)){
 }
 ```
 
-```{r}
+### *Print the top 10 pathways in the document*
+1. Creates the "subchunkify" function, used to print the heatmaps with specific dimensions.
+2. Prints a legend for the colours used in the bars above the heatmap.
+3. Prints the top 10 pathways within the document for easy viewing.
+
+```{r Spare chunk, include=FALSE, eval=FALSE}
+# 1.
+subchunkify <- function(g, fig_height=12, fig_width=16) {
+  g_deparsed <- paste0(deparse(
+    function() {g}
+  ), collapse = '')
+  
+  sub_chunk <- paste0("
+  `","``{r sub_chunk_", floor(runif(1) * 10000), ", fig.height=", fig_height, ", fig.width=", fig_width, ", echo=FALSE}",
+  "\n(", 
+    g_deparsed
+    , ")()",
+  "\n`","``
+  ")
+  
+  cat(knitr::knit(text = knitr::knit_expand(text = sub_chunk), quiet = TRUE))
+}
+
+# 2.
+plot.new()
+legend(0.1,0.5,
+       c("Breast", "High -log IC50", "High AUC", "Large Intestine", "Low -log IC50", "Low AUC", "Stomach", "", ""),
+       fill=c("red","yellow","yellow","green","blue","blue","blue","white","white"), border="white", ncol=3)
+
+# 3.
+#for(k in 1:length(ensginPaths)){
+for(k in 1:2){
+  pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
+  rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
+    GeneLabelTool$SYMBOL[.]
+  zz <- apply(pathway_expDat_sort, 1, scale, scale=TRUE) %>% t()
+  if(nrow(zz) > 1){
+    colnames(zz) <- colnames(pathway_expDat_sort)
+    zz[zz > 3] <- 3
+    zz[zz < -3] <- -3
+    subchunkify(heatmap.mik(zz[,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc[,ord], Colv=FALSE, mar=c(8,12), keysize=1, main = (goseqPathways$Pathway[k])),
+                max(round(nrow(zz)/6),4), 16)
+  }
+}
 
 ```
 
+<center><pdf src=“summer_project/Heatmaps/Extracellular_matrix_organization_heatmap.pdf" ></center>
