@@ -5,17 +5,13 @@ date: "6 January 2020"
 output:
   html_document:
     toc: yes
-    toc_depth: 2
+    toc_depth: 3
     toc_float: yes
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-## Things To Do 
-Put best heatmaps inline in the markdown (check the code mik sent you)
-create a heatmap of the genes that are shared between the pathways (check the code mik sent you) Use genesinPaths or ensginpaths
-
 
 ## Explanation of Steps
 * __Setup:__
@@ -40,15 +36,12 @@ create a heatmap of the genes that are shared between the pathways (check the co
 * __Heatmap Construction:__
 + Builds heatmaps for each pathway, and saves them as .png's.
 + Creates a heatmap of the genes shared between pathways.
-+ Prints heatmaps for the top 20 pathways in the document.
 
+* __Print the Top 20 Pathways:__
++ Prints heatmaps in the document for the top 20 pathways.
 
 ### *A note on the relationship between IC50 and AUC*
-The GDSC data appears to be innaccurately labelled, as natural logged instead of -logged. This means there is a positive relationship between AUC and ln IC50, as what is labelled ln IC50 is actually -log IC50, meaning the relationship is reversed (there is a negative correlation between AUC and ln IC50 which is called (IC50)). The rest of this document assumes that this is true, because if it's not then nothing makes any sense.
-
-That might not actually be right though
-
-Also +ve fold change indicates genes involved in resistance
+The GDSC data appears to be innaccurately labelled, as natural logged instead of -logged. This means there is a positive relationship between AUC and ln IC50, as what is labelled ln IC50 is actually -log IC50, meaning the relationship is reversed (there is a negative correlation between AUC and ln IC50 which is called (IC50)). The rest of this document assumes that this is true, because if it's not then nothing makes any sense. However, this is just an assumption, we don't have any concrete proof. Also note that genes with a +ve fold change in expression are involved in resistance and vice versa.
 
 ## Setup
 
@@ -72,6 +65,7 @@ source('heatmap-mik.R')
 library(knitr)
 library(kableExtra)
 library(devtools)
+
 ```
 
 ### *Load data*
@@ -475,6 +469,31 @@ ensginPaths <- lapply(genesinPaths, function(x) GeneLabelTool$ENSEMBL[na.omit(ma
 rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply(., function(x) x[1]) %>% unlist()
 ```
 
+
+### *Create a heatmap showing the overlap between genes in each pathway*
+* This can be used to identify pathways where similar sets of genes are enriched, and the pathways are therefore quite similar.
+```{r}
+sigPathCor <- matrix(0, length(symbolsinPaths), length(symbolsinPaths))
+rownames(sigPathCor) <- colnames(sigPathCor) <- paste0(goseqPathways$Pathway," (", goseqPathways$numDEInCat, ")")
+# Above two lines are good
+
+for(a in 1:length(symbolsinPaths)){
+  for(b in 1:length(symbolsinPaths)){
+    if(a >  b) sigPathCor[a,b] <- length(intersect(symbolsinPaths[[a]], symbolsinPaths[[b]])) / min(length(symbolsinPaths[[a]]), length(symbolsinPaths[[b]]))
+    if(a <= b) sigPathCor[a,b] <- length(intersect(symbolsinPaths[[a]], symbolsinPaths[[b]])) / max(length(symbolsinPaths[[a]]), length(symbolsinPaths[[b]]))
+  }
+}
+```
+
+```{r, fig.height=11.5, fig.width=11}
+cols <- colorRampPalette(c("white", "red"))(n = 50)
+oo <- as.dendrogram(hclust(dist(sigPathCor)))
+heatmap.2(sigPathCor, scale='none', trace='none', col=cols, key=TRUE, 
+          keysize=0.85, mar=c(26,26),cexRow = 0.8, cexCol=0.8,
+          main="Pathway overlap (genes): Dasatinib associated pathways", 
+          Rowv = oo, Colv=oo)
+```
+
 ### *Create heatmaps for each pathway identified*
 * This loop cycles through and creates a heatmap for each pathway, showing the genes involved from the dataset, and their expression level. These heatmaps are saved as .png's.
 ```{r, warning = FALSE}
@@ -499,7 +518,7 @@ for(k in 1:length(ensginPaths)){
 }
 ```
 
-### *Print the top 20 pathways in the document*
+## Print the Top 20 Pathways
 * Prints the top 20 pathways within the document for easy viewing.
 
 ![](./Heatmaps/Extracellular_matrix_organization_heatmap.png)
