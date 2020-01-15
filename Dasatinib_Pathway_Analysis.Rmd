@@ -4,9 +4,9 @@ author: "Kieran Redpath"
 date: "6 January 2020"
 output:
   html_document:
-    toc: TRUE
+    toc: yes
     toc_depth: 2
-    toc_float: TRUE
+    toc_float: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -38,8 +38,9 @@ create a heatmap of the genes that are shared between the pathways (check the co
 + Extracts genes in the dataset from each pathway.
 
 * __Heatmap Construction:__
-+ Builds heatmaps for each pathway, and saves them as PDF's.
-+ Prints heatmaps for the top 10 pathways inline.
++ Builds heatmaps for each pathway, and saves them as .png's.
++ Creates a heatmap of the genes shared between pathways.
++ Prints heatmaps for the top 20 pathways in the document.
 
 
 ### *A note on the relationship between IC50 and AUC*
@@ -475,7 +476,7 @@ rownames(expDat_sort) <- strsplit(rownames(expDat_sort),".", fixed=T) %>% lapply
 ```
 
 ### *Create heatmaps for each pathway identified*
-* This loop cycles through and creates a heatmap for each pathway, showing the genes involved from the dataset, and their expression level. These heatmaps are saved as PDF's.
+* This loop cycles through and creates a heatmap for each pathway, showing the genes involved from the dataset, and their expression level. These heatmaps are saved as .png's.
 ```{r, warning = FALSE}
 ord = order(cc["AUC Group",])
 for(k in 1:length(ensginPaths)){
@@ -488,8 +489,8 @@ for(k in 1:length(ensginPaths)){
     zz[zz > 3] <- 3
     zz[zz < -3] <- -3
     pn <- gsub(" ","_",goseqPathways$Pathway[k])
-    pdf(paste0("Heatmaps/", pn, "_heatmap.pdf"), height=12, width=20)
-    heatmap.mik(zz[,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc[,ord], Colv=FALSE, mar=c(8,12), keysize=1, main = (goseqPathways$Pathway[k]))
+    png(paste0("Heatmaps/", pn, "_heatmap.png"), width = 20, height = 20, units = 'in', res = 500)
+    heatmap.mik(zz[,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc[,ord], Colv=FALSE, mar=c(4,12), keysize=1, main = (goseqPathways$Pathway[k]))
     legend(0.4,0.97,
            c("Breast", "High -log IC50", "High AUC", "Large Intestine", "Low -log IC50", "Low AUC", "Stomach", "", ""),
            fill=c("red","yellow","yellow","green","blue","blue","blue","white","white"), border="white", ncol=3)
@@ -498,51 +499,51 @@ for(k in 1:length(ensginPaths)){
 }
 ```
 
-### *Print the top 10 pathways in the document*
-1. Creates the "subchunkify" function, used to print the heatmaps with specific dimensions.
-2. Prints a legend for the colours used in the bars above the heatmap.
-3. Prints the top 10 pathways within the document for easy viewing.
-
-```{r Spare chunk, include=FALSE, eval=FALSE}
-# 1.
-subchunkify <- function(g, fig_height=12, fig_width=16) {
-  g_deparsed <- paste0(deparse(
-    function() {g}
-  ), collapse = '')
-  
-  sub_chunk <- paste0("
-  `","``{r sub_chunk_", floor(runif(1) * 10000), ", fig.height=", fig_height, ", fig.width=", fig_width, ", echo=FALSE}",
-  "\n(", 
-    g_deparsed
-    , ")()",
-  "\n`","``
-  ")
-  
-  cat(knitr::knit(text = knitr::knit_expand(text = sub_chunk), quiet = TRUE))
-}
-
-# 2.
-plot.new()
-legend(0.1,0.5,
-       c("Breast", "High -log IC50", "High AUC", "Large Intestine", "Low -log IC50", "Low AUC", "Stomach", "", ""),
-       fill=c("red","yellow","yellow","green","blue","blue","blue","white","white"), border="white", ncol=3)
-
-# 3.
-#for(k in 1:length(ensginPaths)){
-for(k in 1:2){
-  pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
-  rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
-    GeneLabelTool$SYMBOL[.]
-  zz <- apply(pathway_expDat_sort, 1, scale, scale=TRUE) %>% t()
-  if(nrow(zz) > 1){
-    colnames(zz) <- colnames(pathway_expDat_sort)
-    zz[zz > 3] <- 3
-    zz[zz < -3] <- -3
-    subchunkify(heatmap.mik(zz[,ord], trace='none', scale='none', col=bluered(50), ColSideColors=cc[,ord], Colv=FALSE, mar=c(8,12), keysize=1, main = (goseqPathways$Pathway[k])),
-                max(round(nrow(zz)/6),4), 16)
-  }
-}
+### *Create a heatmap showing the overlap between genes in each pathway*
+* This can be used to identify pathways where similar sets of genes are enriched, and the pathways are therefore quite similar.
+```{r}
 
 ```
 
-<center><pdf src=“summer_project/Heatmaps/Extracellular_matrix_organization_heatmap.pdf" ></center>
+### *Print the top 20 pathways in the document*
+* Prints the top 20 pathways within the document for easy viewing.
+
+![](./Heatmaps/Extracellular_matrix_organization_heatmap.png)
+
+![](./Heatmaps/Cell_surface_interactions_at_the_vascular_wall_heatmap.png)
+
+![](./Heatmaps/ECM_proteoglycans_heatmap.png)
+
+![](./Heatmaps/Non-integrin_membrane-ECM_interactions_heatmap.png)
+
+![](./Heatmaps/Collagen_biosynthesis_and_modifying_enzymes_heatmap.png)
+
+![](./Heatmaps/Degradation_of_the_extracellular_matrix_heatmap.png)
+
+![](./Heatmaps/Integrin_cell_surface_interactions_heatmap.png)
+
+![](./Heatmaps/Collagen_formation_heatmap.png)
+
+![](./Heatmaps/Elastic_fibre_formation_heatmap.png)
+
+![(./Heatmaps/Collagen_chain_trimerization.png)]
+
+![(./Heatmaps/Molecules_associated_with_elastic_fibres_heatmap.png)]
+
+![(./Heatmaps/MET_promotes_cell_motility_heatmap.png)]
+
+![(./Heatmaps/Collagen_degradation_heatmap.png)]
+
+![(./Heatmaps/MET_activates_PTK2_signaling_heatmap.png)]
+
+![(./Heatmaps/Hemostasis_heatmap.png)]
+
+![(./Heatmaps/Laminin_interactions_heatmap.png)]
+
+![(./Heatmaps/Regulation_of_Insulin-like_Growth_Factor_(IGF)_transport_and_uptake_by_Insulin-like_Growth_Factor_Binding_Proteins_(IGFBPs)_heatmap.png)]
+
+![(./Heatmaps/Post-translational_protein_phosphorylation_heatmap.png)]
+
+![(./Heatmaps/Assembly_of_collagen_fibrils_and_other_multimeric_structures_heatmap.png)]
+
+![(./Heatmaps/Syndecan_interactions_heatmap.png)]
