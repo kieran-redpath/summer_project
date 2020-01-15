@@ -499,12 +499,6 @@ for(k in 1:length(ensginPaths)){
 }
 ```
 
-### *Create a heatmap showing the overlap between genes in each pathway*
-* This can be used to identify pathways where similar sets of genes are enriched, and the pathways are therefore quite similar.
-```{r}
-
-```
-
 ### *Print the top 20 pathways in the document*
 * Prints the top 20 pathways within the document for easy viewing.
 
@@ -526,24 +520,24 @@ for(k in 1:length(ensginPaths)){
 
 ![](./Heatmaps/Elastic_fibre_formation_heatmap.png)
 
-![(./Heatmaps/Collagen_chain_trimerization.png)]
+![](./Heatmaps/Collagen_chain_trimerization_heatmap.png)
 
-![(./Heatmaps/Molecules_associated_with_elastic_fibres_heatmap.png)]
+![](./Heatmaps/Molecules_associated_with_elastic_fibres_heatmap.png)
 
-![(./Heatmaps/MET_promotes_cell_motility_heatmap.png)]
+![](./Heatmaps/MET_promotes_cell_motility_heatmap.png)
 
-![(./Heatmaps/Collagen_degradation_heatmap.png)]
+![](./Heatmaps/Collagen_degradation_heatmap.png)
 
-![(./Heatmaps/MET_activates_PTK2_signaling_heatmap.png)]
+![](./Heatmaps/MET_activates_PTK2_signaling_heatmap.png)
 
-![(./Heatmaps/Hemostasis_heatmap.png)]
+![](./Heatmaps/Hemostasis_heatmap.png)
 
-![(./Heatmaps/Laminin_interactions_heatmap.png)]
+![](./Heatmaps/Laminin_interactions_heatmap.png)
 
-![(./Heatmaps/Regulation_of_Insulin-like_Growth_Factor_(IGF)_transport_and_uptake_by_Insulin-like_Growth_Factor_Binding_Proteins_(IGFBPs)_heatmap.png)]
+![](./Heatmaps/Regulation_of_Insulin-like_Growth_Factor_(IGF)_transport_and_uptake_by_Insulin-like_Growth_Factor_Binding_Proteins_(IGFBPs)_heatmap.png)
 
-![(./Heatmaps/Post-translational_protein_phosphorylation_heatmap.png)]
+![](./Heatmaps/Post-translational_protein_phosphorylation_heatmap.png)
 
-![(./Heatmaps/Assembly_of_collagen_fibrils_and_other_multimeric_structures_heatmap.png)]
+![](./Heatmaps/Assembly_of_collagen_fibrils_and_other_multimeric_structures_heatmap.png)
 
-![(./Heatmaps/Syndecan_interactions_heatmap.png)]
+![](./Heatmaps/Syndecan_interactions_heatmap.png)
