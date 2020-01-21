@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 * __Differential Expression Analysis:__
 + Carries out differential expression analysis for IC50 and AUC (individually), to determine what genes are significantly differentially expressed in dasatinib resistant/susceptible cell lines.
 + Finds the intersect between the best results for IC50 and AUC, determining that the relationship between them is important (even though results may not appear significant).
++ Saves this table as a .csv.
 
 * __Processing IC50 and AUC Differential Expression Data:__
 + Creates new objects to be fed into pathway analyses.
@@ -65,7 +66,6 @@ source('heatmap-mik.R')
 library(knitr)
 library(kableExtra)
 library(devtools)
-
 ```
 
 ### *Load data*
@@ -280,6 +280,7 @@ points(sz, overlap, type='b', col='red')
 1. Creates a new top table, containing the information for both IC50 and AUC, with ensembl ID's and gene symbols.
 2. Identifies that the sign of the log fold change is consistent with the IC50 and AUC relationship. As IC50 and AUC have an opposite association with cell line resistance/susceptibility to dasatinib, only samples with -log fold change signs (IC50 log FC sign*AUC log FC sign) are kept.
 3. Ranks samples based on average rank between IC50 and AUC adjusted P values.
+4. Saves the top table as a .csv.
 ```{r}
 # 1. 
 tt3 <- full_join(tt, tt2, by= "rn")
@@ -304,6 +305,9 @@ tt3 <-
   mutate(., rank_auc=rank(AUC_Adj_PVal)) %>% 
   mutate(., avg_rank=0.5*(rank_auc + rank_ic50)) %>% 
   arrange(., avg_rank)
+
+# 4.
+write.csv(tt3, file = "Top_Table.csv")
 ```
 
 ### *Create plots illustrating the relationship between AUC/IC50 and gene expression*
@@ -327,7 +331,8 @@ ggplot(data=tt3, mapping=aes(x=AUC_logFC,y=Avg_Exp)) +geom_point()
 ### *Reactome PA analysis with the top 400 genes*
 * Initial analysis with the "ReactomePA" package to get a general idea of what's going on. However, this analysis is not length-corrected.
 1. Loads in Entrez ID's. These will also be used for other pathway analyses.
-2. Creates a list of the top 400 genes, and uses them for pathway analysis. Plots the results, showing count and adjusted P-value.
+2. Creates a list of the top 400 genes, and uses them for pathway analysis. Shows the results of this as a table.
+3. Plots the results, showing count and adjusted P-value. Also saves these as a csv.
 ```{r}
 # 1.
 hs <- org.Hs.eg.db
@@ -339,8 +344,14 @@ Top400GenesEntrez <- AnnotationDbi::select(hs,
                             columns = c("ENTREZID", "SYMBOL"),
                             keytype = "SYMBOL")
 dasat_rPAoverrep <- enrichPathway(gene=Top400GenesEntrez$ENTREZID, organism = "human", pvalueCutoff = 10, readable=T)
+dasat_rPAoverrep_table <- (as.data.frame(dasat_rPAoverrep))
+dasat_rPAoverrep_table <- dplyr::select(dasat_rPAoverrep_table, -c(8))
+dasat_rPAoverrep_table %>%  kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=8), fixed_thead=T)
+
+# 3.
 barplot(dasat_rPAoverrep, showCategory=11, font.size=8)
 dotplot(dasat_rPAoverrep, showCategory=11, font.size=8)
+write.csv(dasat_rPAoverrep_table, file="ReactomePA_Analysis_Results.csv")
 ```
 
 ### *GoSeq analysis with the top 500 genes*
@@ -438,7 +449,8 @@ goseqPathways <- lapply(goseqPathways, gsub, pattern='/', replacement=' ') %>% a
 goseqPathways <- lapply(goseqPathways, gsub, pattern='ERBB2:ERBB3', replacement='ERBB2-ERBB3') %>% as.data.frame()
 
 # 3.
-goseqPathways %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=8), fixed_thead=T) %>% save_kable(file = "Heatmaps/Enriched_Pathways.html", self_contained = T)
+goseqPathways %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=8), fixed_thead=T)
+write.csv(goseqPathways, file = "Enriched_Pathways.csv")
 ```
 
 ## Heatmap  Construction
