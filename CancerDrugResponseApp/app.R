@@ -41,13 +41,13 @@ ui <- fluidPage(
       helpText(em("Enter the name of a drug and a list of tissue types of interest."),
                textInput("drug_name",
                          label = h4("Enter drug (GDSC name). A full list of supported drugs (case-insensitive) can be found",
-                                    a("here.", href = "https://github.com/kieran-redpath/summer_project/blob/master/SupportedDrugs_CancerDrugResponseApp.txt")),
+                                    a("here.", href = "https://github.com/kieran-redpath/summer_project/blob/master/Cancer_Drug_Response_App_Supported/SupportedDrugs_CancerDrugResponseApp.txt")),
                          value = "Enter drug name..."
                ),
                
                textInput("cell_types",
                          label = h4("Enter cell line tissue type, separated by commas. A full list of supported tissues (case-insensitive) can be found",
-                                    a("here.", href = "https://github.com/kieran-redpath/summer_project/blob/master/SupportedTissues_CancerDrugResponseApp.txt")),
+                                    a("here.", href = "https://github.com/kieran-redpath/summer_project/blob/master/Cancer_Drug_Response_App_Supported/SupportedTissues_CancerDrugResponseApp.txt")),
                          value = "Enter tissue types..."
                )
       )
@@ -320,7 +320,6 @@ server <- function(input, output) {
     ensginPaths <- lapply(genesinPaths(), function(x) GeneLabelTool()$ENSEMBL[na.omit(match(x, GeneLabelTool()$ENTREZID))] )
   })  
   
-  
   SiggoseqPathways2 <- reactive({
     SiggenesStick <- lapply(SigsymbolsinPaths(), function(x) paste0(x, collapse="::", sep="")) %>% unlist()
     SiggoseqPathways()$DEgenesInCat <- SiggenesStick
@@ -334,10 +333,14 @@ server <- function(input, output) {
     goseqPathways$Pathway <- lapply(goseqPathways$Pathway, gsub, pattern=':', replacement='-') %>% as.data.frame()
   })
   
+  
+  
   # GoSeqPathways renderTable
   output$pathways <- renderTable(
     SiggoseqPathways2(), striped=TRUE, bordered=TRUE, digits=4
   )
+  
+  
   
   # Heatmap Setup
   tissuetoolsort2 <- reactive({
@@ -345,10 +348,8 @@ server <- function(input, output) {
     tissuetoolsort()$AUC_Group <- ifelse(drug_sort()$AUC > median(drug_sort()$AUC), "High", "Low")
   })
   
-  
   cc <- reactive({
-    tis <- tissuetoolsort2()$Tissue_Type
-    cc <- rbind((as.factor(tis()) %>% as.numeric() %>% rainbow(length(table(.)))[.]),
+    cc <- rbind((as.factor(tissuetoolsort2()$Tissue_Type) %>% as.numeric() %>% rainbow(length(table(.)))[.]),
                 c("yellow", "blue")[as.numeric(as.factor(tissuetoolsort2()$IC50_Group))],
                 c("yellow", "blue")[as.numeric(as.factor(tissuetoolsort2()$AUC_Group))])
     rownames(cc) <- c("Tissue Type", "-log IC50 Group", "AUC Group")
