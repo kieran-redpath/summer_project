@@ -1,5 +1,5 @@
 ---
-title: "Dasatinib_Pathway_Analysis_CDH1"
+title: "Dasatinib_Pathway_Analysis_CDH1_33"
 author: "Kieran Redpath"
 date: "16 January 2020"
 output:
@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * __Pathway Analysis:__
 + Finds pathways based on a list of genes, using the "ReactomePA" package (non length-corrected).
-+ Finds pathways based on a list of genes, using the "goseq" package (both length-corrected and non length-corrected). The overlap shows that length correction is not especially important in this case.
++ Finds pathways based on a list of genes, using the "goseq" package (both length-corrected and non length-corrected).
 + Extracts genes in the dataset from each pathway.
 
 * __Heatmap Construction:__
@@ -39,8 +39,8 @@ knitr::opts_chunk$set(echo = TRUE)
 + Creates a heatmap of the genes shared between pathways.
 + Graphs the CDH1 mutation status of each cell line, showing the split between CDH1+ and CDH1- cell lines.
 
-* __Print the Top 20 Pathways:__
-+ Prints heatmaps in the document for the top 20 pathways.
+* __Print the Significant Pathways:__
++ Prints heatmaps in the document for the pathways with an adjusted p value of <0.05.
 
 ### *A note on the relationship between IC50 and AUC*
 The GDSC data appears to be innaccurately labelled, as natural logged instead of -logged. This means there is a positive relationship between AUC and ln IC50, as what is labelled ln IC50 is actually -log IC50, meaning the relationship is reversed (there is a negative correlation between AUC and ln IC50 which is called (IC50)). The rest of this document assumes that this is true, because if it's not then nothing makes any sense. However, this is just an assumption, we don't have any concrete proof. Also note that genes with a +ve fold change in expression are involved in resistance and vice versa.
@@ -109,7 +109,7 @@ dasatinib_sort <- dasatinib_sort %>% filter(., TCGA_DESC=="BRCA" | TCGA_DESC=="S
 dasatinib_sort <- dasatinib_sort[ dasatinib_sort$AUC < quantile(dasatinib_sort$AUC , 0.33 ) | dasatinib_sort$AUC > quantile(dasatinib_sort$AUC, 0.66), ]
 dasatinib_sort$CDH1 <- expDat_sort %>% as.data.frame() %>% dplyr::select(., which(colnames(.) %in% dasatinib_sort$CCLE_Name)) %>%  .["ENSG00000039068.14",] %>% as.vector() %>% t()
 expDat_sort <- expDat_sort %>% subset(., select=which(colnames(expDat_sort) %in% dasatinib_sort$CCLE_Name))
-# Down to 28 cell lines.
+# Down to 37 cell lines.
 
 # 5.
 lng <- length(colnames(expDatsplit))
@@ -524,11 +524,10 @@ heatmap.2(sigPathCor, scale='none', trace='none', col=cols, key=TRUE,
 
 
 ### *Create heatmaps for each pathway identified*
-* This loop cycles through and creates a heatmap for each pathway, showing all the genes, with expression level and colour coded by significance. Excludes the two pathways with only one gene involved.
+* This loop cycles through and creates a heatmap for each pathway, showing all the genes, with expression level and colour coded by significance. Excludes any pathways with only one gene involved.
 ```{r, warning=FALSE}
 colord = order(cc["AUC Group",])
-#for(k in 1:length(ensginPaths)){
-for(k in 1){
+for(k in 1:length(ensginPaths)){
   # Fetches expression data
   pathway_expDat_sort <- subset(expDat_sort, rownames(expDat_sort) %in% ensginPaths[[k]])
   rownames(pathway_expDat_sort) <- match(rownames(pathway_expDat_sort), GeneLabelTool$ENSEMBL) %>% 
@@ -566,5 +565,45 @@ for(k in 1){
 }
 ```
 
-## Print the Top 20 Pathways
-* Prints the top 20 pathways within the document for easy viewing.
+## Print the Significant Pathways
+* Prints the pathways with an adjusted p value of <0.05 within the document for easy viewing.
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Extracellular_matrix_organization_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/MET_activates_PTK2_signaling_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Laminin_interactions_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/MET_promotes_cell_motility_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Non-integrin_membrane-ECM_interactions_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/ECM_proteoglycans_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Cell_surface_interactions_at_the_vascular_wall_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Degradation_of_the_extracellular_matrix_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Signaling_by_MET_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Cell_junction_organization_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Collagen_formation_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Regulation_of_Insulin-like_Growth_Factor_(IGF)_transport_and_uptake_by_Insulin-like_Growth_Factor_Binding_Proteins_(IGFBPs)_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Platelet_degranulation__heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Response_to_elevated_platelet_cytosolic_Ca2+_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Cell-Cell_communication_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Post-translational_protein_phosphorylation_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Hemostasis_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Assembly_of_collagen_fibrils_and_other_multimeric_structures_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Cell-extracellular_matrix_interactions_heatmap.png)
+
+![](./Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/Signaling_by_Receptor_Tyrosine_Kinases_heatmap.png)
