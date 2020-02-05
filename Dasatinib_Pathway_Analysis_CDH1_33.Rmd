@@ -300,7 +300,7 @@ tt3 <-
   arrange(., avg_rank)
 
 # 4.
-write.csv(tt3, file = "Top_Table.csv")
+write.csv(tt3, file = "Dasatinib_Pathway_Analysis_CDH1_33/Top_Table.csv")
 tt3[1:50,] %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=8), fixed_thead=T)
 ```
 
@@ -345,7 +345,7 @@ dasat_rPAoverrep_table %>%  kable() %>% kable_styling(bootstrap_options = c("str
 # 3.
 barplot(dasat_rPAoverrep, showCategory=11, font.size=8)
 dotplot(dasat_rPAoverrep, showCategory=11, font.size=8)
-write.csv(dasat_rPAoverrep_table, file="ReactomePA_Analysis_Results.csv")
+write.csv(dasat_rPAoverrep_table, file="Dasatinib_Pathway_Analysis_CDH1_33/ReactomePA_Analysis_Results.csv")
 ```
 
 ### *GoSeq analysis with the top 500 genes*
@@ -458,7 +458,7 @@ SiggoseqPathways$DEgenesInCat <- SiggenesStick
 SiggoseqPathways <- lapply(SiggoseqPathways, gsub, pattern='/', replacement=' ') %>% as.data.frame()
 SiggoseqPathways <- lapply(SiggoseqPathways, gsub, pattern='ERBB2:ERBB3', replacement='ERBB2-ERBB3') %>% as.data.frame()
 SiggoseqPathways %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", font_size=8), fixed_thead=T)
-write.csv(SiggoseqPathways, file = "Enriched_Pathways.csv")
+write.csv(SiggoseqPathways, file = "Dasatinib_Pathway_Analysis_CDH1_33/Enriched_Pathways.csv")
 ```
 
 ## Heatmap  Construction
@@ -556,7 +556,7 @@ for(k in 1){
     zz[zz < -3] <- -3
     # Creates the heatmaps
     pn <- gsub(" ","_",goseqPathways$Pathway[k])
-    png(paste0("Heatmaps/", pn, "_heatmap.png"), width = 20, height = 20, units = 'in', res = 500)
+    png(paste0("Dasatinib_Pathway_Analysis_CDH1_33/Heatmaps/", pn, "_heatmap.png"), width = 20, height = 20, units = 'in', res = 500)
     heatmap.mik(zz[roword,colord], trace='none', scale='none', col=bluered(50), ColSideColors=cc[,colord], Colv=FALSE, RowSideColors=rowcc[roword], Rowv=FALSE, mar=c(4,12), keysize=1, cexRow=l, main=(goseqPathways$Pathway[k]))
     legend(0.5,0.97,
            c("Breast", "High -log IC50", "High AUC", "High CDH1 (CDH1+)", "Significant", "Stomach", "Low -log IC50", "Low AUC", "Low CDH1 (CDH1-)", "Not Significant"),
@@ -568,32 +568,3 @@ for(k in 1){
 
 ## Print the Top 20 Pathways
 * Prints the top 20 pathways within the document for easy viewing.
-
-![](./Heatmaps/ECM_proteoglycans_heatmap.png)
-
-
-![](./Heatmaps/Extracellular_matrix_organization_heatmap.png)
-
-
-![](./Heatmaps/Laminin_interactions_heatmap.png)
-
-
-![](./Heatmaps/Integrin_cell_surface_interactions_heatmap.png)
-
-
-![](./Heatmaps/Regulation_of_Insulin-like_Growth_Factor_(IGF)_transport_and_uptake_by_Insulin-like_Growth_Factor_Binding_Proteins_(IGFBPs)_heatmap.png)
-
-
-![](./Heatmaps/Post-translational_protein_phosphorylation_heatmap.png)
-
-
-![](./Heatmaps/Cell_surface_interactions_at_the_vascular_wall_heatmap.png)
-
-
-![](./Heatmaps/Non-integrin_membrane-ECM_interactions_heatmap.png)
-
-
-![](./Heatmaps/Degradation_of_the_extracellular_matrix_heatmap.png)
-
-
-![](./Heatmaps/MET_activates_PTK2_signaling_heatmap.png)
