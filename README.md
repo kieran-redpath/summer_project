@@ -1,10 +1,16 @@
 # summer_project
 
-Markdown Document (PDF is more readable):
+Markdown Document- after removing the middle 33% of cell lines, based on AUC (PDF is more readable):
 
-https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_Final.html
+https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_CDH1_33.html
 
-https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_Final.pdf
+https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_CDH1_33.pdf
+
+Markdown Document- after removing the middle 50% of cell lines, based on AUC (PDF is more readable):
+
+https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_CDH1_50.html
+
+https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_CDH1_50.pdf
 
 Rmd File:
 
