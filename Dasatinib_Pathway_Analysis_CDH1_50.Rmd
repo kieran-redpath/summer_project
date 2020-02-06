@@ -4,14 +4,13 @@ author: "Kieran Redpath"
 date: "16 January 2020"
 output:
   html_document:
-    toc: true
-    toc_depth: 3
-    toc_float: true
+    theme: simplex
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# {.tabset}
 
 ## Explanation of Steps
 * __Setup:__
@@ -45,7 +44,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ### *A note on the relationship between IC50 and AUC*
 The GDSC data appears to be innaccurately labelled, as natural logged instead of -logged. This means there is a positive relationship between AUC and ln IC50, as what is labelled ln IC50 is actually -log IC50, meaning the relationship is reversed (there is a negative correlation between AUC and ln IC50 which is called (IC50)). The rest of this document assumes that this is true, because if it's not then nothing makes any sense. However, this is just an assumption, we don't have any concrete proof. Also note that genes with a +ve fold change in expression are involved in resistance and vice versa.
 
-## Setup
+## Setup  
 
 ### *Load packages*
 ```{r, results='hide', warning=FALSE, message=FALSE}
@@ -131,7 +130,7 @@ tissuetool_match <- match(int, tissuetoolsort$Cell_Line)
 tissuetoolsort <- tissuetoolsort[na.omit(tissuetool_match) , ]
 ```
 
-## Differential Expression Analysis
+## Differential Expression Analysis  
 
 ### *Differential expression analysis for IC50*
 1. Prints some basic information about the objects that will be used for further analyses, for reference.
@@ -266,7 +265,7 @@ plot(sz, expect, type='b', ylim=c(0,max(overlap)))
 points(sz, overlap, type='b', col='red')
 ```
 
-## Processing IC50 and AUC Differential Expression Data
+## Processing IC50 and AUC Differential Expression Data  
 
 ### *Finding the overlap between significant samples*
 * This information (present in top table 3) will be used for pathway analysis.
@@ -320,7 +319,7 @@ ggplot(data=tt3, mapping=aes(x=AUC_Sign,y=Avg_Exp, group=AUC_Sign, fill=AUC_Sign
 ggplot(data=tt3, mapping=aes(x=AUC_logFC,y=Avg_Exp)) +geom_point()
 ```
 
-## Pathway Analysis
+## Pathway Analysis  
 
 ### *Reactome PA analysis with the top 400 genes*
 * Initial analysis with the "ReactomePA" package to get a general idea of what's going on. However, this analysis is not length-corrected.
@@ -461,7 +460,7 @@ SiggoseqPathways %>% kable() %>% kable_styling(bootstrap_options = c("striped", 
 write.csv(SiggoseqPathways, file = "Dasatinib_Pathway_Analysis_CDH1_50/Enriched_Pathways.csv")
 ```
 
-## Heatmap  Construction
+## Heatmap  Construction  
 
 ### *Setup for expression data*
 * Creates objects that add more information to the heatmap. Also prints a legend, showing which cell type is associated with which colour on the heatmap.
@@ -564,7 +563,7 @@ for(k in 1:length(ensginPaths)){
 }
 ```
 
-## Print the Significant Pathways
+## Print the Significant Pathways  
 * Prints the pathways with an adjusted p value of <0.05 within the document for easy viewing.
 
 ![](./Dasatinib_Pathway_Analysis_CDH1_50/Heatmaps/ECM_proteoglycans_heatmap.png)
