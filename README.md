@@ -6,19 +6,23 @@ https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_A
 
 https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_CDH1_33.pdf
 
+Data, including heatmaps (33%):
+
+https://github.com/kieran-redpath/summer_project/tree/master/Dasatinib_Pathway_Analysis_CDH1_33
+
 Markdown Document- after removing the middle 50% of cell lines, based on AUC (PDF is more readable):
 
 https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_CDH1_50.html
 
 https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_CDH1_50.pdf
 
+Data, including heatmaps (50%):
+
+https://github.com/kieran-redpath/summer_project/tree/master/Dasatinib_Pathway_Analysis_CDH1_50
+
 Rmd File:
 
 https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_Final.Rmd
-
-All 55 Heatmaps as .png's:
-
-https://github.com/kieran-redpath/summer_project/tree/master/Heatmaps
 
 Shiny App:
 
