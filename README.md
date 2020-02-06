@@ -20,10 +20,6 @@ Data, including heatmaps (50%):
 
 https://github.com/kieran-redpath/summer_project/tree/master/Dasatinib_Pathway_Analysis_CDH1_50
 
-Rmd File:
-
-https://github.com/kieran-redpath/summer_project/blob/master/Dasatinib_Pathway_Analysis_Final.Rmd
-
 Shiny App:
 
 CancerDrugResponseApp isn't finished yet, but will need two files that are too large to be on here in it's data folder:
