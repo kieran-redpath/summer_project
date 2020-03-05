@@ -42,7 +42,7 @@ knitr::opts_chunk$set(echo = TRUE)
 + Prints heatmaps in the document for the pathways with an adjusted p value of <0.05.
 
 ### *A note on the relationship between IC50 and AUC*
-The GDSC data appears to be innaccurately labelled, as natural logged instead of -logged. This means there is a positive relationship between AUC and ln IC50, as what is labelled ln IC50 is actually -log IC50, meaning the relationship is reversed (there is a negative correlation between AUC and ln IC50 which is called (IC50)). The rest of this document assumes that this is true, because if it's not then nothing makes any sense. However, this is just an assumption, we don't have any concrete proof. Also note that genes with a +ve fold change in expression are involved in resistance and vice versa.
+The GDSC data appears to be innaccurately labelled, as natural logged instead of -logged. This means there is a positive relationship between AUC and ln IC50, as what is labelled ln IC50 is actually -log IC50, meaning the relationship is reversed (there is a negative correlation between AUC and ln IC50 (which is called IC50)). The rest of this document assumes that this is true, because if it's not then nothing makes any sense. However, this is just an assumption, we don't have any concrete proof. Also note that genes with a +ve fold change in expression are involved in resistance and vice versa.
 
 ## Setup
 
